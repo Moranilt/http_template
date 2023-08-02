@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"git.zonatelecom.ru/fsin/censor/clients/credentials"
@@ -20,6 +21,7 @@ type RabbitMQClient struct {
 	notifyChanClose chan *amqp.Error
 	notifyConfirm   chan amqp.Confirmation
 	isReady         bool
+	readyCh         chan bool
 }
 
 const (
@@ -41,6 +43,7 @@ func RabbitMQ(ctx context.Context, log *logger.Logger, creds credentials.SourceS
 		logger:    log,
 		queueName: "censor_orders",
 		done:      make(chan bool),
+		readyCh:   make(chan bool, 3),
 	}
 	go client.handleReconnect(ctx, creds.SourceString())
 
@@ -50,6 +53,7 @@ func RabbitMQ(ctx context.Context, log *logger.Logger, creds credentials.SourceS
 func (client *RabbitMQClient) handleReconnect(ctx context.Context, addr string) {
 	for {
 		client.isReady = false
+		client.readyCh <- false
 		client.logger.Println("Attempting to connect")
 
 		conn, err := client.connect(addr)
@@ -86,6 +90,7 @@ func (client *RabbitMQClient) connect(addr string) (*amqp.Connection, error) {
 func (client *RabbitMQClient) handleReInit(ctx context.Context, conn *amqp.Connection) bool {
 	for {
 		client.isReady = false
+		client.readyCh <- false
 
 		err := client.init(conn)
 
@@ -147,9 +152,68 @@ func (client *RabbitMQClient) init(conn *amqp.Connection) error {
 
 	client.changeChannel(ch)
 	client.isReady = true
+	client.readyCh <- true
 	client.logger.Println("Setup!")
 
 	return nil
+}
+
+func (client *RabbitMQClient) ReadMsgs(ctx context.Context, maxAmount int, callback func(d amqp.Delivery) error) {
+	stopReceive := make(chan bool, 1)
+
+	for {
+		select {
+		case <-ctx.Done():
+			close(stopReceive)
+			return
+		case ready := <-client.readyCh:
+			if !ready {
+				if len(stopReceive) == 0 {
+					stopReceive <- true
+				} else {
+					<-stopReceive
+				}
+				client.logger.Println("Connection closed. Unable to receive messages. Waiting to reconnect...")
+				<-time.After(2 * time.Second)
+				continue
+			} else {
+				if len(stopReceive) != 0 {
+					<-stopReceive
+				}
+
+				go func(done <-chan bool) {
+					client.logger.Println("Run consumer...")
+					deliveries, err := client.Consume()
+					if err != nil {
+						fmt.Printf("Could not start consuming: %s\n", err)
+						return
+					}
+
+					counter := 1
+					for {
+						select {
+						case <-done:
+							return
+						case d := <-deliveries:
+							if counter == maxAmount {
+								counter = 1
+								<-time.After(15 * time.Second)
+							} else {
+								counter++
+							}
+							err := callback(d)
+							if err != nil {
+								continue
+							}
+						}
+					}
+
+				}(stopReceive)
+
+			}
+		}
+
+	}
 }
 
 func (client *RabbitMQClient) changeConnection(connection *amqp.Connection) {
@@ -288,5 +352,6 @@ func (client *RabbitMQClient) Close() error {
 	}
 
 	client.isReady = false
+	close(client.readyCh)
 	return nil
 }

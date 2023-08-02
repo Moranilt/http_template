@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -21,6 +22,7 @@ import (
 	"github.com/golang-migrate/migrate"
 	"github.com/golang-migrate/migrate/database/postgres"
 	_ "github.com/golang-migrate/migrate/source/file"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -101,47 +103,23 @@ func main() {
 		log.Fatal("rabbitmq: ", err)
 	}
 
-	// msgCallback := func(d amqp.Delivery) error {
-	// 	if d.Redelivered {
-	// 		log.Println("Message redelivered...", d.DeliveryTag)
-	// 		d.Ack(true)
-	// 		return errors.New("Message redelivered...")
-	// 	}
-	// 	log.Println("Message: ", string(d.Body), d.DeliveryTag)
-	// 	d.Nack(false, true)
-	// 	return nil
-	// }
+	// Example of consume
+	// You can provide any logic in this callback for each received message
+	//
+	// Requeue received message
+	// If it was requeued already - just Ack this
+	msgCallback := func(d amqp.Delivery) error {
+		if d.Redelivered {
+			log.Println("Message redelivered...", d.DeliveryTag)
+			d.Ack(true)
+			return errors.New("message redelivered")
+		}
+		log.Println("Message: ", string(d.Body), d.DeliveryTag)
+		d.Nack(false, true)
+		return nil
+	}
 
-	// _, err = rabbitMQ.Messages(ctx, 5, msgCallback)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// go func() {
-
-	// 	i := 0
-	// 	for d := range msgs {
-	// 		if d.Redelivered {
-	// 			log.Println("Message redelivered...", d.DeliveryTag)
-	// 			d.Ack(true)
-	// 			continue
-	// 		}
-	// 		log.Println("Message: ", string(d.Body), d.DeliveryTag)
-	// 		d.Nack(false, true)
-
-	// 		if i == 5 {
-	// 			i = 0
-	// 			<-time.After(15 * time.Second)
-	// 		} else {
-	// 			i++
-	// 		}
-	// 		// d.Nack(true, true)
-
-	// 	}
-
-	// 	// d.Ack(true)
-
-	// }()
+	go rabbitMQ.ReadMsgs(ctx, 5, msgCallback)
 
 	repo := repository.New(db, rabbitMQ)
 	svc := service.New(log, repo)
