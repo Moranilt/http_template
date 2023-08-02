@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"git.zonatelecom.ru/fsin/censor/clients/credentials"
 	"git.zonatelecom.ru/fsin/censor/logger"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -35,8 +36,7 @@ var (
 	errShutdown      = errors.New("client is shutting down")
 )
 
-func RabbitMQ(ctx context.Context, log *logger.Logger, creds *RabbitMQCreds) (*RabbitMQClient, error) {
-
+func RabbitMQ(ctx context.Context, log *logger.Logger, creds credentials.SourceStringer) (*RabbitMQClient, error) {
 	client := RabbitMQClient{
 		logger:    log,
 		queueName: "censor_orders",

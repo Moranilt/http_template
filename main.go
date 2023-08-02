@@ -8,6 +8,8 @@ import (
 	"syscall"
 
 	"git.zonatelecom.ru/fsin/censor/clients"
+	"git.zonatelecom.ru/fsin/censor/clients/credentials"
+	"git.zonatelecom.ru/fsin/censor/clients/vault"
 	"git.zonatelecom.ru/fsin/censor/config"
 	"git.zonatelecom.ru/fsin/censor/endpoints"
 	"git.zonatelecom.ru/fsin/censor/logger"
@@ -39,12 +41,16 @@ func main() {
 		log.Fatal("config: ", err)
 	}
 
-	vault, err := clients.Vault(cfg.Vault)
+	err = vault.Init(&vault.Config{
+		MountPath: cfg.Vault.MountPath,
+		Token:     cfg.Vault.Token,
+		Host:      cfg.Vault.Host,
+	})
 	if err != nil {
 		log.Fatal("vault: ", err)
 	}
 
-	dbCreds, err := vault.DBCreds(ctx)
+	dbCreds, err := vault.GetCreds[credentials.DBCreds](ctx, cfg.Vault.DbCredsPath)
 	if err != nil {
 		log.Fatal("get db creds from vault: ", err)
 	}
@@ -86,7 +92,7 @@ func main() {
 
 	log.Debug("migration: ", fmt.Sprintf("version %d", version))
 
-	rabbitMQCreds, err := vault.RabbitMQCreds(ctx)
+	rabbitMQCreds, err := vault.GetCreds[credentials.RabbitMQCreds](ctx, cfg.Vault.RabbitMQCreds)
 	if err != nil {
 		log.Fatal("get rabbitmq creds from vault: ", err)
 	}
