@@ -1,9 +1,8 @@
-package clients
+package rabbitmq
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/Moranilt/http_template/clients/credentials"
@@ -11,7 +10,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type RabbitMQClient struct {
+type Client struct {
 	logger          *logger.Logger
 	queueName       string
 	connection      *amqp.Connection
@@ -26,10 +25,8 @@ type RabbitMQClient struct {
 
 const (
 	reconnectDelay = 5 * time.Second
-
-	reInitDelay = 2 * time.Second
-
-	resendDelay = 5 * time.Second
+	reInitDelay    = 2 * time.Second
+	resendDelay    = 5 * time.Second
 )
 
 var (
@@ -38,10 +35,10 @@ var (
 	errShutdown      = errors.New("client is shutting down")
 )
 
-func RabbitMQ(ctx context.Context, log *logger.Logger, creds credentials.SourceStringer) (*RabbitMQClient, error) {
-	client := RabbitMQClient{
+func New(ctx context.Context, queueName string, log *logger.Logger, creds credentials.SourceStringer) (*Client, error) {
+	client := Client{
 		logger:    log,
-		queueName: "censor_orders",
+		queueName: queueName,
 		done:      make(chan bool),
 		readyCh:   make(chan bool, 3),
 	}
@@ -50,7 +47,7 @@ func RabbitMQ(ctx context.Context, log *logger.Logger, creds credentials.SourceS
 	return &client, nil
 }
 
-func (client *RabbitMQClient) handleReconnect(ctx context.Context, addr string) {
+func (client *Client) handleReconnect(ctx context.Context, addr string) {
 	for {
 		client.isReady = false
 		client.readyCh <- false
@@ -75,7 +72,7 @@ func (client *RabbitMQClient) handleReconnect(ctx context.Context, addr string) 
 	}
 }
 
-func (client *RabbitMQClient) connect(addr string) (*amqp.Connection, error) {
+func (client *Client) connect(addr string) (*amqp.Connection, error) {
 	conn, err := amqp.Dial(addr)
 
 	if err != nil {
@@ -87,7 +84,7 @@ func (client *RabbitMQClient) connect(addr string) (*amqp.Connection, error) {
 	return conn, nil
 }
 
-func (client *RabbitMQClient) handleReInit(ctx context.Context, conn *amqp.Connection) bool {
+func (client *Client) handleReInit(ctx context.Context, conn *amqp.Connection) bool {
 	for {
 		client.isReady = false
 		client.readyCh <- false
@@ -124,7 +121,7 @@ func (client *RabbitMQClient) handleReInit(ctx context.Context, conn *amqp.Conne
 	}
 }
 
-func (client *RabbitMQClient) init(conn *amqp.Connection) error {
+func (client *Client) init(conn *amqp.Connection) error {
 	ch, err := conn.Channel()
 
 	if err != nil {
@@ -158,7 +155,7 @@ func (client *RabbitMQClient) init(conn *amqp.Connection) error {
 	return nil
 }
 
-func (client *RabbitMQClient) ReadMsgs(ctx context.Context, maxAmount int, callback func(d amqp.Delivery) error) {
+func (client *Client) ReadMsgs(ctx context.Context, maxAmount int, callback func(d amqp.Delivery) error) {
 	stopReceive := make(chan bool, 1)
 
 	for {
@@ -185,7 +182,7 @@ func (client *RabbitMQClient) ReadMsgs(ctx context.Context, maxAmount int, callb
 					client.logger.Println("Run consumer...")
 					deliveries, err := client.Consume()
 					if err != nil {
-						fmt.Printf("Could not start consuming: %s\n", err)
+						client.logger.Printf("Could not start consuming: %s\n", err)
 						return
 					}
 
@@ -216,13 +213,13 @@ func (client *RabbitMQClient) ReadMsgs(ctx context.Context, maxAmount int, callb
 	}
 }
 
-func (client *RabbitMQClient) changeConnection(connection *amqp.Connection) {
+func (client *Client) changeConnection(connection *amqp.Connection) {
 	client.connection = connection
 	client.notifyConnClose = make(chan *amqp.Error, 1)
 	client.connection.NotifyClose(client.notifyConnClose)
 }
 
-func (client *RabbitMQClient) changeChannel(channel *amqp.Channel) {
+func (client *Client) changeChannel(channel *amqp.Channel) {
 	client.channel = channel
 	client.notifyChanClose = make(chan *amqp.Error, 1)
 	client.notifyConfirm = make(chan amqp.Confirmation, 1)
@@ -230,7 +227,7 @@ func (client *RabbitMQClient) changeChannel(channel *amqp.Channel) {
 	client.channel.NotifyPublish(client.notifyConfirm)
 }
 
-func (client *RabbitMQClient) Push(ctx context.Context, data []byte) error {
+func (client *Client) Push(ctx context.Context, data []byte) error {
 	if !client.isReady {
 		return errors.New("failed to push: not connected")
 	}
@@ -253,7 +250,7 @@ func (client *RabbitMQClient) Push(ctx context.Context, data []byte) error {
 	}
 }
 
-func (client *RabbitMQClient) UnsafePush(ctx context.Context, data []byte) error {
+func (client *Client) UnsafePush(ctx context.Context, data []byte) error {
 	if !client.isReady {
 		return errNotConnected
 	}
@@ -271,7 +268,7 @@ func (client *RabbitMQClient) UnsafePush(ctx context.Context, data []byte) error
 	)
 }
 
-func (client *RabbitMQClient) Consume() (<-chan amqp.Delivery, error) {
+func (client *Client) Consume() (<-chan amqp.Delivery, error) {
 loopReady:
 	for !client.isReady {
 		<-time.After(resendDelay)
@@ -297,47 +294,7 @@ loopReady:
 	)
 }
 
-func (client *RabbitMQClient) Messages(ctx context.Context, amountLimit int, callback func(d amqp.Delivery) error) (<-chan amqp.Delivery, error) {
-	msgs, err := client.Consume()
-	if err != nil {
-		return nil, err
-	}
-	go func() {
-		counter := 1
-		for {
-			select {
-			case errAmqp := <-client.notifyChanClose:
-				if errAmqp != nil {
-					msgs, err = client.Consume()
-					if err != nil {
-						continue
-					}
-					client.logger.Println("Reconnected channel!")
-				}
-
-			case d := <-msgs:
-
-				if counter == amountLimit {
-					counter = 1
-					<-time.After(15 * time.Second)
-				} else {
-					counter++
-				}
-				err := callback(d)
-				if err != nil {
-					continue
-				}
-
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	return msgs, nil
-}
-
-func (client *RabbitMQClient) Close() error {
+func (client *Client) Close() error {
 	if !client.isReady {
 		return errAlreadyClosed
 	}

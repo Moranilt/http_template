@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/Moranilt/http_template/clients"
+	"github.com/Moranilt/http_template/clients/rabbitmq"
 	"github.com/Moranilt/http_template/models"
 	"github.com/jmoiron/sqlx"
 	"go.opentelemetry.io/otel"
@@ -15,10 +15,10 @@ const TracerName string = "repository"
 
 type Repository struct {
 	db     *sqlx.DB
-	rabbit *clients.RabbitMQClient
+	rabbit *rabbitmq.Client
 }
 
-func New(db *sqlx.DB, rabbit *clients.RabbitMQClient) *Repository {
+func New(db *sqlx.DB, rabbit *rabbitmq.Client) *Repository {
 	return &Repository{
 		db:     db,
 		rabbit: rabbit,

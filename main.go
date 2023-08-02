@@ -10,6 +10,7 @@ import (
 
 	"github.com/Moranilt/http_template/clients"
 	"github.com/Moranilt/http_template/clients/credentials"
+	"github.com/Moranilt/http_template/clients/rabbitmq"
 	"github.com/Moranilt/http_template/clients/vault"
 	"github.com/Moranilt/http_template/config"
 	"github.com/Moranilt/http_template/endpoints"
@@ -28,7 +29,6 @@ import (
 
 func main() {
 	log := logger.New()
-
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
@@ -98,7 +98,8 @@ func main() {
 	if err != nil {
 		log.Fatal("get rabbitmq creds from vault: ", err)
 	}
-	rabbitMQ, err := clients.RabbitMQ(ctx, log, rabbitMQCreds)
+
+	rabbitMQ, err := rabbitmq.New(ctx, "test_queue", log, rabbitMQCreds)
 	if err != nil {
 		log.Fatal("rabbitmq: ", err)
 	}
