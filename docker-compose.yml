@@ -1,0 +1,70 @@
+services:
+  db:
+      image: postgres
+      ports:
+        - "5432:5432"
+      environment:
+        - POSTGRES_USER=root
+        - POSTGRES_PASSWORD=123456
+        - POSTGRES_DB=censor
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+      - "6831:6831/udp"
+      - "14268:14268"
+
+  vault:
+    image: vault
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=myroot
+      - VAULT_TOKEN=myroot
+      - VAULT_API_ADDR=http://localhost:8200
+      - VAULT_ADDR=http://localhost:8200
+    networks:
+      - vault_init
+
+  vault_init:
+    image: vault
+    depends_on:
+      - vault
+    restart: on-failure
+    environment:
+      - VAULT_TOKEN=myroot
+      - VAULT_API_ADDR=http://vault:8200
+      - VAULT_ADDR=http://vault:8200
+    volumes:
+      - ./config/local/vault/policy/censor_policy.hcl:/policies/censor_policy.hcl:ro
+      - ./config/local/vault/db_config.json:/tmp/db_config.json:ro
+      - ./config/local/vault/rabbitmq_config.json:/tmp/rabbitmq_config.json:ro
+    command: >
+     sh -c "vault policy write censor-policy /policies/censor_policy.hcl &&
+      vault token create -policy=censor-policy -id censor-token &&
+      vault kv put -mount=secret censor/db @/tmp/db_config.json &&
+      vault kv put -mount=secret censor/rabbitmq @/tmp/rabbitmq_config.json"
+    networks:
+      - vault_init
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_PASS: 1234
+      RABBITMQ_DEFAULT_USER: test
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - rabbitmq_net
+
+networks:
+  vault_init:
+    driver: bridge
+  rabbitmq_net:
+    driver: bridge
