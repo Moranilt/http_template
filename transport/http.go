@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"git.zonatelecom.ru/fsin/censor/endpoints"
-	"git.zonatelecom.ru/fsin/censor/middleware"
+	"github.com/Moranilt/http_template/endpoints"
+	"github.com/Moranilt/http_template/middleware"
 	"github.com/gorilla/mux"
 )
 

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"git.zonatelecom.ru/fsin/censor/clients/credentials"
-	"git.zonatelecom.ru/fsin/censor/logger"
+	"github.com/Moranilt/http_template/clients/credentials"
+	"github.com/Moranilt/http_template/logger"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

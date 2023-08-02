@@ -3,7 +3,7 @@ package clients
 import (
 	"context"
 
-	"git.zonatelecom.ru/fsin/censor/clients/credentials"
+	"github.com/Moranilt/http_template/clients/credentials"
 	"github.com/jmoiron/sqlx"
 )
 

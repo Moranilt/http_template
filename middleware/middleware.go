@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"git.zonatelecom.ru/fsin/censor/logger"
+	"github.com/Moranilt/http_template/logger"
 	"github.com/google/uuid"
 )
 

@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 
-	"git.zonatelecom.ru/fsin/censor/clients"
-	"git.zonatelecom.ru/fsin/censor/models"
+	"github.com/Moranilt/http_template/clients"
+	"github.com/Moranilt/http_template/models"
 	"github.com/jmoiron/sqlx"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"

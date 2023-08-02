@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"git.zonatelecom.ru/fsin/censor/logger"
-	response "git.zonatelecom.ru/fsin/censor/utils/reponse"
+	"github.com/Moranilt/http_template/logger"
+	response "github.com/Moranilt/http_template/utils/reponse"
 	"github.com/gorilla/mux"
 )
 

@@ -3,10 +3,10 @@ package service
 import (
 	"net/http"
 
-	"git.zonatelecom.ru/fsin/censor/logger"
-	"git.zonatelecom.ru/fsin/censor/models"
-	"git.zonatelecom.ru/fsin/censor/repository"
-	"git.zonatelecom.ru/fsin/censor/utils/handler"
+	"github.com/Moranilt/http_template/logger"
+	"github.com/Moranilt/http_template/models"
+	"github.com/Moranilt/http_template/repository"
+	"github.com/Moranilt/http_template/utils/handler"
 )
 
 type Service interface {

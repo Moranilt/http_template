@@ -3,7 +3,7 @@ package endpoints
 import (
 	"net/http"
 
-	"git.zonatelecom.ru/fsin/censor/service"
+	"github.com/Moranilt/http_template/service"
 )
 
 type Endpoint struct {

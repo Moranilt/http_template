@@ -1,4 +1,4 @@
-module git.zonatelecom.ru/fsin/censor
+module github.com/Moranilt/http_template
 
 go 1.20
 
