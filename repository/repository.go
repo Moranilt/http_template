@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/Moranilt/http_template/clients/rabbitmq"
 	"github.com/Moranilt/http_template/models"
@@ -14,14 +15,12 @@ import (
 const TracerName string = "repository"
 
 type Repository struct {
-	db     *sqlx.DB
-	rabbit *rabbitmq.Client
+	db *sqlx.DB
 }
 
-func New(db *sqlx.DB, rabbit *rabbitmq.Client) *Repository {
+func New(db *sqlx.DB) *Repository {
 	return &Repository{
-		db:     db,
-		rabbit: rabbit,
+		db: db,
 	}
 }
 
@@ -31,7 +30,12 @@ func (repo *Repository) Test(ctx context.Context, req *models.TestReq) (*models.
 	))
 	defer span.End()
 
-	err := repo.rabbit.Push(newCtx, []byte("Hello World!"))
+	b, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+
+	err = rabbitmq.Push(newCtx, b)
 	if err != nil {
 		return nil, err
 	}

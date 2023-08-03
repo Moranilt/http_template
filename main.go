@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -25,6 +26,10 @@ import (
 	_ "github.com/golang-migrate/migrate/source/file"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/sync/errgroup"
+)
+
+const (
+	RABBITMQ_QUEUE_NAME = "test_queue"
 )
 
 func main() {
@@ -73,56 +78,21 @@ func main() {
 		}
 	}(ctx)
 
-	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
+	err = RunMigrations(log, db.DB, dbCreds.DBName)
 	if err != nil {
 		log.Fatal("migration: ", err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file://migrations", dbCreds.DBName, driver)
-	if err != nil {
-		log.Fatal("migration: ", err)
-	}
-	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
-		log.Fatal("migration: ", err)
-	}
-
-	version, _, err := m.Version()
-	if err != nil {
-		log.Fatal("migration: ", err)
-	}
-
-	log.Debug("migration: ", fmt.Sprintf("version %d", version))
-
+	// RabbitMQ
 	rabbitMQCreds, err := vault.GetCreds[credentials.RabbitMQCreds](ctx, cfg.Vault.RabbitMQCreds)
 	if err != nil {
 		log.Fatal("get rabbitmq creds from vault: ", err)
 	}
 
-	rabbitMQ, err := rabbitmq.New(ctx, "test_queue", log, rabbitMQCreds)
-	if err != nil {
-		log.Fatal("rabbitmq: ", err)
-	}
+	rabbitmq.Init(ctx, RABBITMQ_QUEUE_NAME, log, rabbitMQCreds)
+	rabbitmq.ReadMsgs(ctx, 5, ConsumeMessage)
 
-	// Example of consume
-	// You can provide any logic in this callback for each received message
-	//
-	// Requeue received message
-	// If it was requeued already - just Ack this
-	msgCallback := func(d amqp.Delivery) error {
-		if d.Redelivered {
-			log.Println("Message redelivered...", d.DeliveryTag)
-			d.Ack(true)
-			return errors.New("message redelivered")
-		}
-		log.Println("Message: ", string(d.Body), d.DeliveryTag)
-		d.Nack(false, true)
-		return nil
-	}
-
-	go rabbitMQ.ReadMsgs(ctx, 5, msgCallback)
-
-	repo := repository.New(db, rabbitMQ)
+	repo := repository.New(db)
 	svc := service.New(log, repo)
 	ep := endpoints.MakeEndpoints(svc)
 	mw := middleware.New(log)
@@ -135,7 +105,7 @@ func main() {
 	})
 	g.Go(func() error {
 		<-gCtx.Done()
-		return rabbitMQ.Close()
+		return rabbitmq.Close()
 	})
 	g.Go(func() error {
 		return server.ListenAndServe()
@@ -145,4 +115,44 @@ func main() {
 		log.Debugf("exit with: %s", err)
 	}
 
+}
+
+// Example of consume
+// You can provide any logic in this callback for each received message
+//
+// Requeue received message
+// If it was requeued already - just Ack this
+func ConsumeMessage(d amqp.Delivery) error {
+	if d.Redelivered {
+		d.Ack(true)
+		fmt.Println("Message redelivered: ", string(d.Body), d.DeliveryTag)
+		return errors.New("message redelivered")
+	}
+	d.Reject(true)
+	fmt.Println("Message: ", string(d.Body), d.DeliveryTag)
+	return nil
+}
+
+func RunMigrations(log *logger.Logger, db *sql.DB, databaseName string) error {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		return err
+	}
+
+	m, err := migrate.NewWithDatabaseInstance("file://migrations", databaseName, driver)
+	if err != nil {
+		return err
+	}
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		return err
+	}
+
+	version, _, err := m.Version()
+	if err != nil {
+		return err
+	}
+
+	log.Debug("migration: ", fmt.Sprintf("version %d", version))
+	return nil
 }

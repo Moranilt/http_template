@@ -10,6 +10,22 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const (
+	reconnectDelay = 5 * time.Second
+	reInitDelay    = 2 * time.Second
+	resendDelay    = 5 * time.Second
+)
+
+var (
+	errNotConnected  = errors.New("not connected to a server")
+	errAlreadyClosed = errors.New("already closed: not connected to the server")
+	errShutdown      = errors.New("client is shutting down")
+)
+
+var (
+	rabbitMQClient *Client
+)
+
 type Client struct {
 	logger          *logger.Logger
 	queueName       string
@@ -23,19 +39,7 @@ type Client struct {
 	readyCh         chan bool
 }
 
-const (
-	reconnectDelay = 5 * time.Second
-	reInitDelay    = 2 * time.Second
-	resendDelay    = 5 * time.Second
-)
-
-var (
-	errNotConnected  = errors.New("not connected to a server")
-	errAlreadyClosed = errors.New("already closed: not connected to the server")
-	errShutdown      = errors.New("client is shutting down")
-)
-
-func New(ctx context.Context, queueName string, log *logger.Logger, creds credentials.SourceStringer) (*Client, error) {
+func Init(ctx context.Context, queueName string, log *logger.Logger, creds credentials.SourceStringer) {
 	client := Client{
 		logger:    log,
 		queueName: queueName,
@@ -44,7 +48,7 @@ func New(ctx context.Context, queueName string, log *logger.Logger, creds creden
 	}
 	go client.handleReconnect(ctx, creds.SourceString())
 
-	return &client, nil
+	rabbitMQClient = &client
 }
 
 func (client *Client) handleReconnect(ctx context.Context, addr string) {
@@ -190,6 +194,7 @@ func (client *Client) ReadMsgs(ctx context.Context, maxAmount int, callback func
 					for {
 						select {
 						case <-done:
+							client.logger.Println("Consumer stopped...")
 							return
 						case d := <-deliveries:
 							if counter == maxAmount {
@@ -204,9 +209,7 @@ func (client *Client) ReadMsgs(ctx context.Context, maxAmount int, callback func
 							}
 						}
 					}
-
 				}(stopReceive)
-
 			}
 		}
 
