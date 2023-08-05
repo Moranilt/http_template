@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Moranilt/http_template/clients"
 	"github.com/Moranilt/http_template/clients/credentials"
+	"github.com/Moranilt/http_template/clients/db"
 	"github.com/Moranilt/http_template/clients/rabbitmq"
 	"github.com/Moranilt/http_template/clients/vault"
 	"github.com/Moranilt/http_template/config"
@@ -62,7 +62,7 @@ func main() {
 		log.Fatal("get db creds from vault: ", err)
 	}
 
-	db, err := clients.DB(ctx, cfg.Production, dbCreds)
+	db, err := db.New(ctx, cfg.Production, dbCreds)
 	if err != nil {
 		log.Fatal("db connection: ", err)
 	}
@@ -89,10 +89,10 @@ func main() {
 		log.Fatal("get rabbitmq creds from vault: ", err)
 	}
 
-	rabbitmq.Init(ctx, RABBITMQ_QUEUE_NAME, log, rabbitMQCreds)
+	rebbitmqClient := rabbitmq.Init(ctx, RABBITMQ_QUEUE_NAME, log, rabbitMQCreds)
 	rabbitmq.ReadMsgs(ctx, 5, ConsumeMessage)
 
-	repo := repository.New(db)
+	repo := repository.New(db, rebbitmqClient)
 	svc := service.New(log, repo)
 	ep := endpoints.MakeEndpoints(svc)
 	mw := middleware.New(log)
@@ -128,8 +128,9 @@ func ConsumeMessage(d amqp.Delivery) error {
 		fmt.Println("Message redelivered: ", string(d.Body), d.DeliveryTag)
 		return errors.New("message redelivered")
 	}
-	d.Reject(true)
-	fmt.Println("Message: ", string(d.Body), d.DeliveryTag)
+
+	fmt.Println("Message: ", string(d.Body), d.DeliveryTag, d.MessageCount)
+	d.Nack(false, true)
 	return nil
 }
 

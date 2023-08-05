@@ -1,13 +1,14 @@
-package clients
+package db
 
 import (
 	"context"
 
 	"github.com/Moranilt/http_template/clients/credentials"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
-func DB(ctx context.Context, production bool, creds *credentials.DBCreds) (*sqlx.DB, error) {
+func New(ctx context.Context, production bool, creds *credentials.DBCreds) (*sqlx.DB, error) {
 	db, err := sqlx.Open("postgres", creds.SourceString(production))
 	if err != nil {
 		return nil, err

@@ -15,12 +15,14 @@ import (
 const TracerName string = "repository"
 
 type Repository struct {
-	db *sqlx.DB
+	db       *sqlx.DB
+	rabbitmq *rabbitmq.Client
 }
 
-func New(db *sqlx.DB) *Repository {
+func New(db *sqlx.DB, rabbitmq *rabbitmq.Client) *Repository {
 	return &Repository{
-		db: db,
+		db:       db,
+		rabbitmq: rabbitmq,
 	}
 }
 
@@ -35,10 +37,12 @@ func (repo *Repository) Test(ctx context.Context, req *models.TestReq) (*models.
 		return nil, err
 	}
 
-	err = rabbitmq.Push(newCtx, b)
+	err = repo.rabbitmq.Push(newCtx, b)
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	return &models.TestResponse{
+		Name: req.Name,
+	}, nil
 }

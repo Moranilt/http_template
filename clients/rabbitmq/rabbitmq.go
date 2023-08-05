@@ -39,7 +39,7 @@ type Client struct {
 	readyCh         chan bool
 }
 
-func Init(ctx context.Context, queueName string, log *logger.Logger, creds credentials.SourceStringer) {
+func Init(ctx context.Context, queueName string, log *logger.Logger, creds credentials.SourceStringer) *Client {
 	client := Client{
 		logger:    log,
 		queueName: queueName,
@@ -49,6 +49,7 @@ func Init(ctx context.Context, queueName string, log *logger.Logger, creds crede
 	go client.handleReconnect(ctx, creds.SourceString())
 
 	rabbitMQClient = &client
+	return &client
 }
 
 func (client *Client) handleReconnect(ctx context.Context, addr string) {
@@ -258,16 +259,18 @@ func (client *Client) UnsafePush(ctx context.Context, data []byte) error {
 		return errNotConnected
 	}
 
+	msg := amqp.Publishing{
+		ContentType: "application/json",
+		Body:        data,
+	}
+
 	return client.channel.PublishWithContext(
 		ctx,
 		"",
 		client.queueName,
 		false,
 		false,
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        data,
-		},
+		msg,
 	)
 }
 
