@@ -22,6 +22,17 @@ const (
 	ENV_TRACER_NAME = "TRACER_NAME"
 )
 
+var envVariables []string = []string{
+	ENV_PORT,
+	ENV_VAULT_TOKEN,
+	ENV_VAULT_HOST,
+	ENV_VAULT_MOUNT_PATH,
+	ENV_VAULT_DB_CREDS_PATH,
+	ENV_VAULT_RABBITMQ_CREDS_PATH,
+	ENV_TRACER_URL,
+	ENV_TRACER_NAME,
+}
+
 type VaultEnv struct {
 	MountPath     string `mapstructure:"VAULT_MOUNT_PATH"`
 	DbCredsPath   string `mapstructure:"VAULT_DB_CREDS_PATH"`
@@ -47,49 +58,33 @@ func Read() (*Config, error) {
 	viper.AutomaticEnv()
 	isProduction := viper.GetBool(ENV_PRODUCTION)
 
-	vaultToken := os.Getenv(ENV_VAULT_TOKEN)
-	if vaultToken == "" {
-		return nil, fmt.Errorf("env VAULT_TOKEN is empty")
+	result := make(map[string]string, len(envVariables))
+	for _, name := range envVariables {
+		value := os.Getenv(name)
+		if value == "" {
+			return nil, fmt.Errorf("env %q is empty", name)
+		}
+		result[name] = value
 	}
 
-	vaultHost := os.Getenv(ENV_VAULT_HOST)
-	if vaultHost == "" {
-		return nil, fmt.Errorf("env VAULT_HOST is empty")
-	}
-
-	vaultHostUrl, err := url.Parse(vaultHost)
+	vaultHostUrl, err := url.Parse(result[ENV_VAULT_HOST])
 	if err != nil {
-		return nil, fmt.Errorf("VAULT_HOST has invalid value: %w", err)
-	}
-
-	vaultMountPath := os.Getenv(ENV_VAULT_MOUNT_PATH)
-	if vaultMountPath == "" {
-		return nil, fmt.Errorf("env VAULT_MOUNT_PATH is empty")
-	}
-
-	vaultDbCredsPath := os.Getenv(ENV_VAULT_DB_CREDS_PATH)
-	if vaultDbCredsPath == "" {
-		return nil, fmt.Errorf("env VAULT_DB_CREDS_PATH is empty")
-	}
-
-	vaultRabbitMQCredsPath := os.Getenv(ENV_VAULT_RABBITMQ_CREDS_PATH)
-	if vaultDbCredsPath == "" {
-		return nil, fmt.Errorf("env VAULT_RABBITMQ_CREDS_PATH is empty")
+		return nil, fmt.Errorf("%q has invalid value: %w", ENV_VAULT_HOST, err)
 	}
 
 	envCfg = Config{
 		Vault: &VaultEnv{
-			Token:         vaultToken,
-			MountPath:     vaultMountPath,
-			DbCredsPath:   vaultDbCredsPath,
+			Token:         result[ENV_VAULT_TOKEN],
+			MountPath:     result[ENV_VAULT_MOUNT_PATH],
+			DbCredsPath:   result[ENV_VAULT_DB_CREDS_PATH],
 			Host:          vaultHostUrl.String(),
-			RabbitMQCreds: vaultRabbitMQCredsPath,
+			RabbitMQCreds: result[ENV_VAULT_RABBITMQ_CREDS_PATH],
 		},
 		Tracer: &TracerConfig{
-			URL:  viper.GetString(ENV_TRACER_URL),
-			Name: viper.GetString(ENV_TRACER_NAME),
+			URL:  result[ENV_TRACER_URL],
+			Name: result[ENV_TRACER_NAME],
 		},
-		Port:       viper.GetString(ENV_PORT),
+		Port:       result[ENV_PORT],
 		Production: isProduction,
 	}
 
