@@ -30,3 +30,9 @@ test-cover:
 
 cover-html:
 	go tool cover -html=./cover
+
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down
