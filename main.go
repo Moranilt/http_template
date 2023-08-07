@@ -12,6 +12,7 @@ import (
 	"github.com/Moranilt/http_template/clients/credentials"
 	"github.com/Moranilt/http_template/clients/db"
 	"github.com/Moranilt/http_template/clients/rabbitmq"
+	"github.com/Moranilt/http_template/clients/redis"
 	"github.com/Moranilt/http_template/clients/vault"
 	"github.com/Moranilt/http_template/config"
 	"github.com/Moranilt/http_template/endpoints"
@@ -92,7 +93,18 @@ func main() {
 	rebbitmqClient := rabbitmq.Init(ctx, RABBITMQ_QUEUE_NAME, log, rabbitMQCreds)
 	rabbitmq.ReadMsgs(ctx, 5, ConsumeMessage)
 
-	repo := repository.New(db, rebbitmqClient)
+	// Redis
+	redisCreds, err := vault.GetCreds[credentials.Redis](ctx, cfg.Vault.RedisCreds)
+	if err != nil {
+		log.Fatal("get redis creds from vault: ", err)
+	}
+
+	redisClient, err := redis.New(ctx, redisCreds)
+	if err != nil {
+		log.Fatal("redis: ", err)
+	}
+
+	repo := repository.New(db, rebbitmqClient, redisClient)
 	svc := service.New(log, repo)
 	ep := endpoints.MakeEndpoints(svc)
 	mw := middleware.New(log)

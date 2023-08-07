@@ -36,3 +36,8 @@ type RabbitMQCreds struct {
 func (r *RabbitMQCreds) SourceString() string {
 	return fmt.Sprintf("amqp://%s:%s@%s/", r.Username, r.Password, r.Host)
 }
+
+type Redis struct {
+	Host     string `mapstructure:"host"`
+	Password string `mapstructure:"password"`
+}

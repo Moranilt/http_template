@@ -44,10 +44,12 @@ services:
       - ./config/local/vault/policy/censor_policy.hcl:/policies/censor_policy.hcl:ro
       - ./config/local/vault/db_config.json:/tmp/db_config.json:ro
       - ./config/local/vault/rabbitmq_config.json:/tmp/rabbitmq_config.json:ro
+      - ./config/local/vault/redis_config.json:/tmp/redis_config.json:ro
     command: >
      sh -c "vault policy write censor-policy /policies/censor_policy.hcl &&
       vault token create -policy=censor-policy -id censor-token &&
       vault kv put -mount=secret censor/db @/tmp/db_config.json &&
+      vault kv put -mount=secret censor/redis @/tmp/redis_config.json &&
       vault kv put -mount=secret censor/rabbitmq @/tmp/rabbitmq_config.json"
     networks:
       - vault_init
@@ -62,6 +64,13 @@ services:
       - "15672:15672"
     networks:
       - rabbitmq_net
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    environment:
+      REDIS_PASSWORD: 1234
 
 networks:
   vault_init:

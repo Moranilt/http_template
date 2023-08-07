@@ -8,6 +8,7 @@ import (
 	"github.com/Moranilt/http_template/clients/rabbitmq"
 	"github.com/Moranilt/http_template/models"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -18,12 +19,14 @@ const TracerName string = "repository"
 type Repository struct {
 	db       *sqlx.DB
 	rabbitmq *rabbitmq.Client
+	redis    *redis.Client
 }
 
-func New(db *sqlx.DB, rabbitmq *rabbitmq.Client) *Repository {
+func New(db *sqlx.DB, rabbitmq *rabbitmq.Client, redis *redis.Client) *Repository {
 	return &Repository{
 		db:       db,
 		rabbitmq: rabbitmq,
+		redis:    redis,
 	}
 }
 

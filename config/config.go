@@ -17,6 +17,7 @@ const (
 	ENV_VAULT_MOUNT_PATH          = "VAULT_MOUNT_PATH"
 	ENV_VAULT_DB_CREDS_PATH       = "VAULT_DB_CREDS_PATH"
 	ENV_VAULT_RABBITMQ_CREDS_PATH = "VAULT_RABBITMQ_CREDS_PATH"
+	ENV_VAULT_REDIS_CREDS_PATH    = "VAULT_REDIS_CREDS_PATH"
 
 	ENV_TRACER_URL  = "TRACER_URL"
 	ENV_TRACER_NAME = "TRACER_NAME"
@@ -29,6 +30,7 @@ var envVariables []string = []string{
 	ENV_VAULT_MOUNT_PATH,
 	ENV_VAULT_DB_CREDS_PATH,
 	ENV_VAULT_RABBITMQ_CREDS_PATH,
+	ENV_VAULT_REDIS_CREDS_PATH,
 	ENV_TRACER_URL,
 	ENV_TRACER_NAME,
 }
@@ -37,6 +39,7 @@ type VaultEnv struct {
 	MountPath     string `mapstructure:"VAULT_MOUNT_PATH"`
 	DbCredsPath   string `mapstructure:"VAULT_DB_CREDS_PATH"`
 	RabbitMQCreds string `mapstructure:"VAULT_RABBITMQ_CREDS_PATH"`
+	RedisCreds    string `mapstructure:"VAULT_REDIS_CREDS_PATH"`
 	Token         string `mapstructure:"VAULT_TOKEN"`
 	Host          string `mapstructure:"VAULT_HOST"`
 }
@@ -79,6 +82,7 @@ func Read() (*Config, error) {
 			DbCredsPath:   result[ENV_VAULT_DB_CREDS_PATH],
 			Host:          vaultHostUrl.String(),
 			RabbitMQCreds: result[ENV_VAULT_RABBITMQ_CREDS_PATH],
+			RedisCreds:    result[ENV_VAULT_REDIS_CREDS_PATH],
 		},
 		Tracer: &TracerConfig{
 			URL:  result[ENV_TRACER_URL],
