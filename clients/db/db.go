@@ -8,8 +8,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func New(ctx context.Context, production bool, creds *credentials.DBCreds) (*sqlx.DB, error) {
-	db, err := sqlx.Open("postgres", creds.SourceString(production))
+func New(ctx context.Context, driverName string, creds *credentials.DBCreds, production bool) (*sqlx.DB, error) {
+	db, err := sqlx.Open(driverName, creds.SourceString(production))
 	if err != nil {
 		return nil, err
 	}
