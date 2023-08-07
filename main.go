@@ -31,6 +31,8 @@ import (
 
 const (
 	RABBITMQ_QUEUE_NAME = "test_queue"
+
+	DB_DRIVER_NAME = "postgres"
 )
 
 func main() {
@@ -63,7 +65,7 @@ func main() {
 		log.Fatal("get db creds from vault: ", err)
 	}
 
-	db, err := db.New(ctx, "postgres", dbCreds, cfg.Production)
+	db, err := db.New(ctx, DB_DRIVER_NAME, dbCreds, cfg.Production)
 	if err != nil {
 		log.Fatal("db connection: ", err)
 	}
