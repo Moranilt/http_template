@@ -1,13 +1,13 @@
-FROM hb.zonatelecom.ru/dhp/library/golang:1.20 AS builder
+FROM golang:1.20 AS builder
 
 COPY . /src
 WORKDIR /src
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /src/bin/sms_otp
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /src/bin/test_project
 
 COPY ./migrations /src/bin/migrations
 
-FROM hb.zonatelecom.ru/dhp/library/alpine:latest
+FROM alpine:latest
 
 ARG PRODUCTION
 ENV PRODUCTION=$PRODUCTION
@@ -25,6 +25,6 @@ COPY --from=builder /src/bin /src/bin
 WORKDIR /src/bin
 
 EXPOSE $PORT
-ENTRYPOINT ["/src/bin/sms_otp"]
+ENTRYPOINT ["/src/bin/test_project"]
 
 
