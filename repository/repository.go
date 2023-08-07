@@ -59,7 +59,7 @@ func (repo *Repository) Files(ctx context.Context, req *models.FileRequest) (*mo
 	for _, f := range req.Files {
 		fileNames = append(fileNames, f.Filename)
 	}
-	newCtx, span := otel.Tracer(TracerName).Start(ctx, "Test", trace.WithAttributes(
+	newCtx, span := otel.Tracer(TracerName).Start(ctx, "Files", trace.WithAttributes(
 		attribute.String("Name", req.Name),
 		attribute.StringSlice("FIles", fileNames),
 		attribute.String("OneMoreFile", req.OneMoreFile.Filename),

@@ -51,6 +51,7 @@ func main() {
 		log.Fatal("config: ", err)
 	}
 
+	// Vault
 	err = vault.Init(&vault.Config{
 		MountPath: cfg.Vault.MountPath,
 		Token:     cfg.Vault.Token,
@@ -60,6 +61,7 @@ func main() {
 		log.Fatal("vault: ", err)
 	}
 
+	// Database
 	dbCreds, err := vault.GetCreds[credentials.DB](ctx, cfg.Vault.DbCredsPath)
 	if err != nil {
 		log.Fatal("get db creds from vault: ", err)
@@ -71,6 +73,7 @@ func main() {
 	}
 	defer db.Close()
 
+	// Tracer
 	tp, err := tracer.NewProvider(cfg.Tracer.URL, cfg.Tracer.Name)
 	if err != nil {
 		log.Fatal("tracer: ", err)
@@ -81,6 +84,7 @@ func main() {
 		}
 	}(ctx)
 
+	// Migrations
 	err = RunMigrations(log, db.DB, dbCreds.DBName)
 	if err != nil {
 		log.Fatal("migration: ", err)

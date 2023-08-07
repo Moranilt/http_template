@@ -1,15 +1,15 @@
 PRODUCTION=false
 PORT=8080
 
-VAULT_TOKEN=censor-token
+VAULT_TOKEN=test-token
 VAULT_HOST=http://localhost:8200
 VAULT_MOUNT_PATH=secret
-VAULT_DB_CREDS_PATH=censor/db
-VAULT_RABBITMQ_CREDS_PATH=censor/rabbitmq
-VAULT_REDIS_CREDS_PATH=censor/redis
+VAULT_DB_CREDS_PATH=test/db
+VAULT_RABBITMQ_CREDS_PATH=test/rabbitmq
+VAULT_REDIS_CREDS_PATH=test/redis
 
 TRACER_URL=http://localhost:14268/api/traces
-TRACER_NAME=censor
+TRACER_NAME=test
 
 DEFAULT_ENV=PRODUCTION=$(PRODUCTION) PORT=$(PORT)
 
