@@ -58,7 +58,7 @@ func main() {
 		log.Fatal("vault: ", err)
 	}
 
-	dbCreds, err := vault.GetCreds[credentials.DBCreds](ctx, cfg.Vault.DbCredsPath)
+	dbCreds, err := vault.GetCreds[credentials.DB](ctx, cfg.Vault.DbCredsPath)
 	if err != nil {
 		log.Fatal("get db creds from vault: ", err)
 	}
@@ -85,7 +85,7 @@ func main() {
 	}
 
 	// RabbitMQ
-	rabbitMQCreds, err := vault.GetCreds[credentials.RabbitMQCreds](ctx, cfg.Vault.RabbitMQCreds)
+	rabbitMQCreds, err := vault.GetCreds[credentials.RabbitMQ](ctx, cfg.Vault.RabbitMQCreds)
 	if err != nil {
 		log.Fatal("get rabbitmq creds from vault: ", err)
 	}

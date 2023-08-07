@@ -2,7 +2,7 @@ package models
 
 import "mime/multipart"
 
-type TestReq struct {
+type TestRequest struct {
 	Name string `json:"name"`
 }
 

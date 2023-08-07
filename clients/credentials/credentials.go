@@ -6,7 +6,7 @@ type SourceStringer interface {
 	SourceString() string
 }
 
-type DBCreds struct {
+type DB struct {
 	Username string `mapstructure:"username"`
 	Password string `mapstructure:"password"`
 	DBName   string `mapstructure:"dbname"`
@@ -14,7 +14,7 @@ type DBCreds struct {
 	SSLMode  string `mapstructure:"sslmode"`
 }
 
-func (d *DBCreds) SourceString(production bool) string {
+func (d *DB) SourceString(production bool) string {
 	if !production {
 		return fmt.Sprintf(
 			"user=%s password=%s dbname=%s host=%s sslmode=disable",
@@ -27,13 +27,13 @@ func (d *DBCreds) SourceString(production bool) string {
 	)
 }
 
-type RabbitMQCreds struct {
+type RabbitMQ struct {
 	Host     string `mapstructure:"host"`
 	Username string `mapstructure:"username"`
 	Password string `mapstructure:"password"`
 }
 
-func (r *RabbitMQCreds) SourceString() string {
+func (r *RabbitMQ) SourceString() string {
 	return fmt.Sprintf("amqp://%s:%s@%s/", r.Username, r.Password, r.Host)
 }
 

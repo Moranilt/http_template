@@ -30,7 +30,7 @@ func New(db *sqlx.DB, rabbitmq *rabbitmq.Client, redis *redis.Client) *Repositor
 	}
 }
 
-func (repo *Repository) Test(ctx context.Context, req *models.TestReq) (*models.TestResponse, error) {
+func (repo *Repository) Test(ctx context.Context, req *models.TestRequest) (*models.TestResponse, error) {
 	newCtx, span := otel.Tracer(TracerName).Start(ctx, "Test", trace.WithAttributes(
 		attribute.String("Name", req.Name),
 	))

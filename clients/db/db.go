@@ -8,7 +8,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func New(ctx context.Context, driverName string, creds *credentials.DBCreds, production bool) (*sqlx.DB, error) {
+func New(ctx context.Context, driverName string, creds *credentials.DB, production bool) (*sqlx.DB, error) {
 	db, err := sqlx.Open(driverName, creds.SourceString(production))
 	if err != nil {
 		return nil, err
