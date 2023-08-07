@@ -19,16 +19,15 @@ type Logger struct {
 }
 
 func New() *Logger {
-	logger := Logger{}
+	logger := &Logger{}
 	logger.Formatter = new(logrus.JSONFormatter)
 	logger.Level = logrus.TraceLevel
 	logger.Out = os.Stdout
 
-	return &logger
+	return logger
 }
 
 func (l *Logger) WithRequestInfo(r *http.Request) *logrus.Entry {
-	logger := New()
 	requestId := r.Context().Value(CtxRequestId)
 
 	fields := logrus.Fields{
@@ -41,5 +40,5 @@ func (l *Logger) WithRequestInfo(r *http.Request) *logrus.Entry {
 		fields["ip"] = clientIP
 	}
 
-	return logger.WithFields(fields)
+	return l.WithFields(fields)
 }
