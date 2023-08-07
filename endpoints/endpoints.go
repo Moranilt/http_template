@@ -19,5 +19,10 @@ func MakeEndpoints(service service.Service) []Endpoint {
 			HandleFunc: service.Test,
 			Methods:    []string{http.MethodGet},
 		},
+		{
+			Pattern:    "/files",
+			HandleFunc: service.Files,
+			Methods:    []string{http.MethodPost},
+		},
 	}
 }
