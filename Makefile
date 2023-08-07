@@ -24,3 +24,15 @@ run:
 
 test:
 	go test ./...
+
+test-cover:
+	go test ./... -coverprofile=./cover
+
+cover-html:
+	go tool cover -html=./cover
+
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down
