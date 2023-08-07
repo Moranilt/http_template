@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Moranilt/http_template/logger"
-	response "github.com/Moranilt/http_template/utils/reponse"
+	"github.com/Moranilt/http_template/utils/response"
 	"github.com/gorilla/mux"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"

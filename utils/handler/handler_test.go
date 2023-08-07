@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"github.com/Moranilt/http_template/logger"
-	response "github.com/Moranilt/http_template/utils/reponse"
+	"github.com/Moranilt/http_template/utils/response"
 	"github.com/gorilla/mux"
 )
 
