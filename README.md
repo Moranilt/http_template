@@ -16,11 +16,11 @@ Tracing:
 
 ## Usage
 1. Install [gonew](https://go.dev/blog/gonew)
+2. Run:
 ```bash
 go install golang.org/x/tools/cmd/gonew@latest
 ```
-
-2. Happy coding!
+3. Happy coding!
 
 ## Folders
 ### Clients
