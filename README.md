@@ -2,7 +2,7 @@
 
 HTTP microservice template for fast start
 
-The idea of this package to make standart template which you can clone or use [gonew](https://go.dev/blog/gonew) tool.
+The idea of this package is to make standart template which you can clone or use [gonew](https://go.dev/blog/gonew) tool.
 
 From the box it contains clients for:
 - [Vault](https://www.vaultproject.io/)
