@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/Moranilt/http_template/clients/credentials"
@@ -37,6 +38,19 @@ type Client struct {
 	notifyConfirm   chan amqp.Confirmation
 	isReady         bool
 	readyCh         chan bool
+	mu              sync.Mutex
+}
+
+func (c *Client) setIsReady(ready bool) {
+	c.mu.Lock()
+	c.isReady = ready
+	c.mu.Unlock()
+}
+
+func (c *Client) getIsReady() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.isReady
 }
 
 func (c *Client) Check(ctx context.Context) error {
@@ -101,7 +115,7 @@ func (client *Client) connect(addr string) (*amqp.Connection, error) {
 
 func (client *Client) handleReInit(ctx context.Context, conn *amqp.Connection) bool {
 	for {
-		client.isReady = false
+		client.setIsReady(false)
 		client.readyCh <- false
 
 		err := client.init(conn)
@@ -163,7 +177,7 @@ func (client *Client) init(conn *amqp.Connection) error {
 	}
 
 	client.changeChannel(ch)
-	client.isReady = true
+	client.setIsReady(true)
 	client.readyCh <- true
 	client.logger.Println("Setup!")
 
@@ -311,7 +325,7 @@ loopReady:
 }
 
 func (client *Client) Close() error {
-	if !client.isReady {
+	if !client.getIsReady() {
 		return errAlreadyClosed
 	}
 	close(client.done)

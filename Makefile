@@ -22,6 +22,9 @@ ENVIRONMENT = $(DEFAULT_ENV) $(VAULT_ENV) $(TRACER_ENV)
 run:
 	$(ENVIRONMENT) go run .
 
+run-race:
+	$(ENVIRONMENT) go run -race .
+
 test:
 	go test ./...
 
