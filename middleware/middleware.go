@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/Moranilt/http_template/logger"
@@ -13,21 +12,10 @@ type ContextKey string
 
 const (
 	TOKEN_HEADER = "X-App-Token"
-
-	CtxAppToken ContextKey = "app_token"
 )
 
 type Middleware struct {
 	logger *logger.Logger
-}
-
-func GetAppTokenFromContext(ctx context.Context) (string, error) {
-	ctxValue := ctx.Value(CtxAppToken)
-	token, ok := ctxValue.(string)
-	if !ok {
-		return "", fmt.Errorf("not valid type of token. Got %T, wants %q", token, "string")
-	}
-	return token, nil
 }
 
 func New(l *logger.Logger) *Middleware {
