@@ -3,7 +3,7 @@ package endpoints
 import (
 	"net/http"
 
-	db "github.com/Moranilt/http_template/clients/database"
+	"github.com/Moranilt/http_template/clients/database"
 	"github.com/Moranilt/http_template/clients/rabbitmq"
 	"github.com/Moranilt/http_template/clients/redis"
 	"github.com/Moranilt/http_template/healthcheck"
@@ -31,7 +31,7 @@ func MakeEndpoints(service service.Service) []Endpoint {
 	}
 }
 
-func MakeHealth(db *db.Client, rabbitmq *rabbitmq.Client, redis *redis.Client) Endpoint {
+func MakeHealth(db *database.Client, rabbitmq *rabbitmq.Client, redis *redis.Client) Endpoint {
 	return Endpoint{
 		Pattern: "/health",
 		HandleFunc: healthcheck.HandlerFunc(
