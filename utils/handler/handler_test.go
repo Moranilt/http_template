@@ -540,7 +540,7 @@ func (cntr *testHandleFuncController[ReqT, RespT]) Run(t testing.TB, logger *log
 		return
 	}
 
-	var mockResp response.DefaultResponse[RespT]
+	var mockResp response.DefaultResponse[RespT, any]
 	err = json.NewDecoder(resp.Body).Decode(&mockResp)
 	if err != nil {
 		t.Error(err)
