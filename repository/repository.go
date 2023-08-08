@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
+	"github.com/Moranilt/http_template/clients/database"
 	"github.com/Moranilt/http_template/clients/rabbitmq"
+	"github.com/Moranilt/http_template/clients/redis"
 	"github.com/Moranilt/http_template/models"
-	"github.com/jmoiron/sqlx"
-	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -17,12 +18,12 @@ import (
 const TracerName string = "repository"
 
 type Repository struct {
-	db       *sqlx.DB
+	db       *database.Client
 	rabbitmq *rabbitmq.Client
 	redis    *redis.Client
 }
 
-func New(db *sqlx.DB, rabbitmq *rabbitmq.Client, redis *redis.Client) *Repository {
+func New(db *database.Client, rabbitmq *rabbitmq.Client, redis *redis.Client) *Repository {
 	return &Repository{
 		db:       db,
 		rabbitmq: rabbitmq,
@@ -35,6 +36,11 @@ func (repo *Repository) Test(ctx context.Context, req *models.TestRequest) (*mod
 		attribute.String("Name", req.Name),
 	))
 	defer span.End()
+
+	err := repo.redis.Set(newCtx, "test", "name", 30*time.Second).Err()
+	if err != nil {
+		return nil, err
+	}
 
 	b, err := json.Marshal(req)
 	if err != nil {

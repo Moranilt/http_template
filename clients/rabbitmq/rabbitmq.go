@@ -39,6 +39,16 @@ type Client struct {
 	readyCh         chan bool
 }
 
+func (c *Client) Check(ctx context.Context) error {
+	if c.connection.IsClosed() {
+		return errors.New("connection closed")
+	}
+	if c.channel.IsClosed() {
+		return errors.New("channel closed")
+	}
+	return nil
+}
+
 func Init(ctx context.Context, queueName string, log *logger.Logger, creds credentials.SourceStringer) *Client {
 	client := Client{
 		logger:    log,

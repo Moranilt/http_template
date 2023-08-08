@@ -10,7 +10,7 @@ import (
 	"syscall"
 
 	"github.com/Moranilt/http_template/clients/credentials"
-	"github.com/Moranilt/http_template/clients/db"
+	"github.com/Moranilt/http_template/clients/database"
 	"github.com/Moranilt/http_template/clients/rabbitmq"
 	"github.com/Moranilt/http_template/clients/redis"
 	"github.com/Moranilt/http_template/clients/vault"
@@ -67,7 +67,7 @@ func main() {
 		log.Fatal("get db creds from vault: ", err)
 	}
 
-	db, err := db.New(ctx, DB_DRIVER_NAME, dbCreds, cfg.Production)
+	db, err := database.New(ctx, DB_DRIVER_NAME, dbCreds, cfg.Production)
 	if err != nil {
 		log.Fatal("db connection: ", err)
 	}
@@ -85,7 +85,7 @@ func main() {
 	}(ctx)
 
 	// Migrations
-	err = RunMigrations(log, db.DB, dbCreds.DBName)
+	err = RunMigrations(log, db.DB.DB, dbCreds.DBName)
 	if err != nil {
 		log.Fatal("migration: ", err)
 	}
@@ -113,6 +113,8 @@ func main() {
 	repo := repository.New(db, rebbitmqClient, redisClient)
 	svc := service.New(log, repo)
 	ep := endpoints.MakeEndpoints(svc)
+	health := endpoints.MakeHealth(db, rebbitmqClient, redisClient)
+	ep = append(ep, health)
 	mw := middleware.New(log)
 	server := transport.New(fmt.Sprintf(":%s", cfg.Port), ep, mw)
 
