@@ -22,6 +22,18 @@ go install golang.org/x/tools/cmd/gonew@latest
 ```
 3. Happy coding!
 
+## Makefile
+To fast usage you can use makefile commands
+`run` - runs you app with local environment variables
+`run-race` - runs you app with local environment variables with `-race` flag
+`test` - runs tests in all folders
+`test-cover` - runs tests with coverage
+`cover-html` - opens your `cover` file in browser
+`docker-up` - runs docker compose file
+`docker-down` - runs docker compose down command
+
+Feel free to modify environment variables, but beware to not break default configuration rules.
+
 ## Folders
 ### Clients
 This folder contains all clients for external services. Implement `healthcheck.Checker` interface if you want to use your service in `/health` endpoint.
