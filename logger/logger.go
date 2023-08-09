@@ -19,20 +19,51 @@ const (
 	CtxRequestId ContextKey = "request_id"
 )
 
+const (
+	LevelTrace  = slog.Level(-8)
+	LevelNotice = slog.Level(2)
+	LevelFatal  = slog.Level(12)
+)
+
+var LevelNames = map[slog.Leveler]string{
+	LevelTrace:  "TRACE",
+	LevelNotice: "NOTICE",
+	LevelFatal:  "FATAL",
+}
+
 type SLogger struct {
 	*slog.Logger
 }
 
 func NewSlog(output io.Writer) *SLogger {
-	l := slog.New(slog.NewJSONHandler(output, nil))
+	l := slog.New(slog.NewJSONHandler(output, &slog.HandlerOptions{
+		Level:       LevelTrace,
+		ReplaceAttr: renameLevel,
+	}))
+
+	slog.SetDefault(l)
+
 	logger := &SLogger{
 		l,
 	}
 	return logger
 }
 
+func (l *SLogger) Trace(msg string, args ...any) {
+	l.Log(context.Background(), LevelTrace, msg, args...)
+}
+
+func (l *SLogger) Notice(msg string, args ...any) {
+	l.Log(context.Background(), LevelNotice, msg, args...)
+}
+
 func (l *SLogger) Fatal(msg string, args ...any) {
-	l.Error(msg, args)
+	l.Log(context.Background(), LevelFatal, msg, args...)
+	os.Exit(1)
+}
+
+func (l *SLogger) Fatalf(format string, args ...any) {
+	l.Log(context.Background(), LevelFatal, fmt.Sprintf(format, args...))
 	os.Exit(1)
 }
 
@@ -72,6 +103,20 @@ func (l *SLogger) WithRequestId(ctx context.Context) *SLogger {
 		}
 	}
 	return l
+}
+
+func renameLevel(groups []string, a slog.Attr) slog.Attr {
+	if a.Key == slog.LevelKey {
+		level := a.Value.Any().(slog.Level)
+		levelLabel, exists := LevelNames[level]
+		if !exists {
+			levelLabel = level.String()
+		}
+
+		a.Value = slog.StringValue(levelLabel)
+	}
+
+	return a
 }
 
 type Logger struct {
