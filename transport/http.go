@@ -14,7 +14,8 @@ func New(addr string, endpoints []endpoints.Endpoint, mw *middleware.Middleware)
 	router.Use(mw.Default)
 
 	for _, endpoint := range endpoints {
-		router.HandleFunc(endpoint.Pattern, endpoint.HandleFunc).Methods(endpoint.Methods...)
+		handlerFunc := applyMiddleware(endpoint.HandleFunc, endpoint.Middleware)
+		router.HandleFunc(endpoint.Pattern, handlerFunc).Methods(endpoint.Methods...)
 	}
 
 	server := &http.Server{
@@ -24,4 +25,11 @@ func New(addr string, endpoints []endpoints.Endpoint, mw *middleware.Middleware)
 	}
 	server.Handler = router
 	return server
+}
+
+func applyMiddleware(handlerFunc http.HandlerFunc, mws []middleware.EndpointMiddlewareFunc) http.HandlerFunc {
+	for _, mw := range mws {
+		handlerFunc = mw(handlerFunc)
+	}
+	return handlerFunc
 }

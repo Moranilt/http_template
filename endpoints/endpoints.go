@@ -7,6 +7,7 @@ import (
 	"github.com/Moranilt/http_template/clients/rabbitmq"
 	"github.com/Moranilt/http_template/clients/redis"
 	"github.com/Moranilt/http_template/healthcheck"
+	"github.com/Moranilt/http_template/middleware"
 	"github.com/Moranilt/http_template/service"
 )
 
@@ -14,9 +15,10 @@ type Endpoint struct {
 	Pattern    string
 	HandleFunc http.HandlerFunc
 	Methods    []string
+	Middleware []middleware.EndpointMiddlewareFunc
 }
 
-func MakeEndpoints(service service.Service) []Endpoint {
+func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoint {
 	return []Endpoint{
 		{
 			Pattern:    "/test",
@@ -27,6 +29,7 @@ func MakeEndpoints(service service.Service) []Endpoint {
 			Pattern:    "/files",
 			HandleFunc: service.Files,
 			Methods:    []string{http.MethodPost},
+			Middleware: []middleware.EndpointMiddlewareFunc{mw.AppTokenRequired},
 		},
 	}
 }
