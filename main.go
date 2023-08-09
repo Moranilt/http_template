@@ -36,7 +36,7 @@ const (
 )
 
 func main() {
-	log := logger.New()
+	log := logger.NewSlog(os.Stdout)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
@@ -110,7 +110,7 @@ func main() {
 		log.Fatal("redis: ", err)
 	}
 
-	repo := repository.New(db, rebbitmqClient, redisClient)
+	repo := repository.New(db, rebbitmqClient, redisClient, log)
 	svc := service.New(log, repo)
 	mw := middleware.New(log)
 	ep := endpoints.MakeEndpoints(svc, mw)
@@ -154,7 +154,7 @@ func ConsumeMessage(d amqp.Delivery) error {
 	return nil
 }
 
-func RunMigrations(log *logger.Logger, db *sql.DB, databaseName string) error {
+func RunMigrations(log *logger.SLogger, db *sql.DB, databaseName string) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return err
@@ -174,6 +174,6 @@ func RunMigrations(log *logger.Logger, db *sql.DB, databaseName string) error {
 		return err
 	}
 
-	log.Debug("migration: ", fmt.Sprintf("version %d", version))
+	log.Debug(fmt.Sprintf("migration: version %d", version))
 	return nil
 }

@@ -50,8 +50,7 @@ func makeMockedFunction[ReqT any, RespT any](requestValidator func(request ReqT)
 }
 
 func TestHandler(t *testing.T) {
-	logger := logger.New()
-	logger.SetOutput(io.Discard)
+	logger := logger.NewSlog(io.Discard)
 
 	t.Run("default handler Run", func(t *testing.T) {
 		routePath := "/test-route"
@@ -377,8 +376,7 @@ func TestHandler(t *testing.T) {
 }
 
 func BenchmarkMultipart(b *testing.B) {
-	logger := logger.New()
-	logger.SetOutput(io.Discard)
+	logger := logger.NewSlog(io.Discard)
 	routePath := "/test-files"
 
 	testHandler := makeMockedFunction(func(request mockMultipartRequest) *mockResponse {
@@ -472,7 +470,7 @@ func newTestHandleController[ReqT any, RespT any](
 	}
 }
 
-func (cntr *testHandleFuncController[ReqT, RespT]) Run(t testing.TB, logger *logger.Logger) {
+func (cntr *testHandleFuncController[ReqT, RespT]) Run(t testing.TB, logger *logger.SLogger) {
 	router := mux.NewRouter()
 	requestPath := cntr.routePath
 	if cntr.vars != nil {
