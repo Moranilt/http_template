@@ -106,12 +106,12 @@ func (h *HandlerMaker[ReqT, RespT]) WithQuery() *HandlerMaker[ReqT, RespT] {
 //
 // Other fields should have string type([mime/multipart.Form])
 //
-// # File types:
+// # File types
 //
 //   - []*multipart.FileHeader -	field with array of files. Should contain square brackets in name
 //   - *multipart.FileHeader -	field with single file. Should not contain square brackets in field name
 //
-// # Example:
+// # Example
 //
 //	type YourRequest struct {
 //		MultipleFiles []*multipart.FileHeader `mapstructure:"your_files[]"`
