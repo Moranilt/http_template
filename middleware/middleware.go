@@ -17,12 +17,12 @@ const (
 )
 
 type Middleware struct {
-	logger *logger.Logger
+	logger *logger.SLogger
 }
 
 type EndpointMiddlewareFunc func(handleFunc http.HandlerFunc) http.HandlerFunc
 
-func New(l *logger.Logger) *Middleware {
+func New(l *logger.SLogger) *Middleware {
 	return &Middleware{
 		logger: l,
 	}

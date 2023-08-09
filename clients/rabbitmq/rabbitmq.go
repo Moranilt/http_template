@@ -28,7 +28,7 @@ var (
 )
 
 type Client struct {
-	logger          *logger.Logger
+	logger          *logger.SLogger
 	queueName       string
 	connection      *amqp.Connection
 	channel         *amqp.Channel
@@ -63,7 +63,7 @@ func (c *Client) Check(ctx context.Context) error {
 	return nil
 }
 
-func Init(ctx context.Context, queueName string, log *logger.Logger, creds credentials.SourceStringer) *Client {
+func Init(ctx context.Context, queueName string, log *logger.SLogger, creds credentials.SourceStringer) *Client {
 	client := Client{
 		logger:    log,
 		queueName: queueName,
@@ -80,12 +80,12 @@ func (client *Client) handleReconnect(ctx context.Context, addr string) {
 	for {
 		client.isReady = false
 		client.readyCh <- false
-		client.logger.Println("Attempting to connect")
+		client.logger.InfoContext(ctx, "Attempting to connect")
 
 		conn, err := client.connect(addr)
 
 		if err != nil {
-			client.logger.Println("Failed to connect. Retrying...")
+			client.logger.InfoContext(ctx, "Failed to connect. Retrying...")
 
 			select {
 			case <-client.done:
@@ -109,7 +109,7 @@ func (client *Client) connect(addr string) (*amqp.Connection, error) {
 	}
 
 	client.changeConnection(conn)
-	client.logger.Println("Connected!")
+	client.logger.Info("Connected!")
 	return conn, nil
 }
 
@@ -121,7 +121,7 @@ func (client *Client) handleReInit(ctx context.Context, conn *amqp.Connection) b
 		err := client.init(conn)
 
 		if err != nil {
-			client.logger.Println("Failed to initialize channel. Retrying...")
+			client.logger.InfoContext(ctx, "Failed to initialize channel. Retrying...")
 
 			select {
 			case <-ctx.Done():
@@ -129,7 +129,7 @@ func (client *Client) handleReInit(ctx context.Context, conn *amqp.Connection) b
 			case <-client.done:
 				return true
 			case <-client.notifyConnClose:
-				client.logger.Println("Connection closed. Reconnecting...")
+				client.logger.InfoContext(ctx, "Connection closed. Reconnecting...")
 				return false
 			case <-time.After(reInitDelay):
 			}
@@ -142,10 +142,10 @@ func (client *Client) handleReInit(ctx context.Context, conn *amqp.Connection) b
 		case <-client.done:
 			return true
 		case <-client.notifyConnClose:
-			client.logger.Println("Connection closed. Reconnecting...")
+			client.logger.InfoContext(ctx, "Connection closed. Reconnecting...")
 			return false
 		case <-client.notifyChanClose:
-			client.logger.Println("Channel closed. Re-running init...")
+			client.logger.InfoContext(ctx, "Channel closed. Re-running init...")
 		}
 	}
 }
@@ -179,7 +179,7 @@ func (client *Client) init(conn *amqp.Connection) error {
 	client.changeChannel(ch)
 	client.setIsReady(true)
 	client.readyCh <- true
-	client.logger.Println("Setup!")
+	client.logger.Info("Setup!")
 
 	return nil
 }
@@ -199,7 +199,7 @@ func (client *Client) ReadMsgs(ctx context.Context, maxAmount int, callback func
 				} else {
 					<-stopReceive
 				}
-				client.logger.Println("Connection closed. Unable to receive messages. Waiting to reconnect...")
+				client.logger.Info("Connection closed. Unable to receive messages. Waiting to reconnect...")
 				<-time.After(2 * time.Second)
 				continue
 			} else {
@@ -208,10 +208,10 @@ func (client *Client) ReadMsgs(ctx context.Context, maxAmount int, callback func
 				}
 
 				go func(done <-chan bool) {
-					client.logger.Println("Run consumer...")
+					client.logger.Info("Run consumer...")
 					deliveries, err := client.Consume()
 					if err != nil {
-						client.logger.Printf("Could not start consuming: %s\n", err)
+						client.logger.Infof("Could not start consuming: %s\n", err)
 						return
 					}
 
@@ -219,7 +219,7 @@ func (client *Client) ReadMsgs(ctx context.Context, maxAmount int, callback func
 					for {
 						select {
 						case <-done:
-							client.logger.Println("Consumer stopped...")
+							client.logger.Info("Consumer stopped...")
 							return
 						case d := <-deliveries:
 							if counter == maxAmount {
@@ -262,7 +262,7 @@ func (client *Client) Push(ctx context.Context, data []byte) error {
 	for {
 		err := client.UnsafePush(ctx, data)
 		if err != nil {
-			client.logger.Println("Push failed. Retrying...")
+			client.logger.InfoContext(ctx, "Push failed. Retrying...")
 			select {
 			case <-client.done:
 				return errShutdown
@@ -272,7 +272,7 @@ func (client *Client) Push(ctx context.Context, data []byte) error {
 		}
 		confirm := <-client.notifyConfirm
 		if confirm.Ack {
-			client.logger.Printf("Push confirmed [%d]!", confirm.DeliveryTag)
+			client.logger.Infof("Push confirmed [%d]!", confirm.DeliveryTag)
 			return nil
 		}
 	}

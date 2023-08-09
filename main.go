@@ -36,7 +36,7 @@ const (
 )
 
 func main() {
-	log := logger.New()
+	log := logger.NewSlog(os.Stdout)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
@@ -48,7 +48,7 @@ func main() {
 
 	cfg, err := config.Read()
 	if err != nil {
-		log.Fatal("config: ", err)
+		log.Fatalf("config: %v", err)
 	}
 
 	// Vault
@@ -58,25 +58,25 @@ func main() {
 		Host:      cfg.Vault.Host,
 	})
 	if err != nil {
-		log.Fatal("vault: ", err)
+		log.Fatalf("vault: %v", err)
 	}
 
 	// Database
 	dbCreds, err := vault.GetCreds[credentials.DB](ctx, cfg.Vault.DbCredsPath)
 	if err != nil {
-		log.Fatal("get db creds from vault: ", err)
+		log.Fatalf("get db creds from vault: %v", err)
 	}
 
 	db, err := database.New(ctx, DB_DRIVER_NAME, dbCreds, cfg.Production)
 	if err != nil {
-		log.Fatal("db connection: ", err)
+		log.Fatalf("db connection: %v", err)
 	}
 	defer db.Close()
 
 	// Tracer
 	tp, err := tracer.NewProvider(cfg.Tracer.URL, cfg.Tracer.Name)
 	if err != nil {
-		log.Fatal("tracer: ", err)
+		log.Fatalf("tracer: %v", err)
 	}
 	defer func(ctx context.Context) {
 		if err := tp.Shutdown(ctx); err != nil {
@@ -87,13 +87,13 @@ func main() {
 	// Migrations
 	err = RunMigrations(log, db.DB.DB, dbCreds.DBName)
 	if err != nil {
-		log.Fatal("migration: ", err)
+		log.Fatalf("migration: %v", err)
 	}
 
 	// RabbitMQ
 	rabbitMQCreds, err := vault.GetCreds[credentials.RabbitMQ](ctx, cfg.Vault.RabbitMQCreds)
 	if err != nil {
-		log.Fatal("get rabbitmq creds from vault: ", err)
+		log.Fatalf("get rabbitmq creds from vault: %v", err)
 	}
 
 	rebbitmqClient := rabbitmq.Init(ctx, RABBITMQ_QUEUE_NAME, log, rabbitMQCreds)
@@ -102,15 +102,15 @@ func main() {
 	// Redis
 	redisCreds, err := vault.GetCreds[credentials.Redis](ctx, cfg.Vault.RedisCreds)
 	if err != nil {
-		log.Fatal("get redis creds from vault: ", err)
+		log.Fatalf("get redis creds from vault: %v", err)
 	}
 
 	redisClient, err := redis.New(ctx, redisCreds)
 	if err != nil {
-		log.Fatal("redis: ", err)
+		log.Fatalf("redis: %v", err)
 	}
 
-	repo := repository.New(db, rebbitmqClient, redisClient)
+	repo := repository.New(db, rebbitmqClient, redisClient, log)
 	svc := service.New(log, repo)
 	mw := middleware.New(log)
 	ep := endpoints.MakeEndpoints(svc, mw)
@@ -154,7 +154,7 @@ func ConsumeMessage(d amqp.Delivery) error {
 	return nil
 }
 
-func RunMigrations(log *logger.Logger, db *sql.DB, databaseName string) error {
+func RunMigrations(log *logger.SLogger, db *sql.DB, databaseName string) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return err
@@ -174,6 +174,6 @@ func RunMigrations(log *logger.Logger, db *sql.DB, databaseName string) error {
 		return err
 	}
 
-	log.Debug("migration: ", fmt.Sprintf("version %d", version))
+	log.Debug(fmt.Sprintf("migration: version %d", version))
 	return nil
 }

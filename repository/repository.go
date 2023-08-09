@@ -9,6 +9,7 @@ import (
 	"github.com/Moranilt/http_template/clients/database"
 	"github.com/Moranilt/http_template/clients/rabbitmq"
 	"github.com/Moranilt/http_template/clients/redis"
+	"github.com/Moranilt/http_template/logger"
 	"github.com/Moranilt/http_template/models"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -21,17 +22,20 @@ type Repository struct {
 	db       *database.Client
 	rabbitmq *rabbitmq.Client
 	redis    *redis.Client
+	log      *logger.SLogger
 }
 
-func New(db *database.Client, rabbitmq *rabbitmq.Client, redis *redis.Client) *Repository {
+func New(db *database.Client, rabbitmq *rabbitmq.Client, redis *redis.Client, logger *logger.SLogger) *Repository {
 	return &Repository{
 		db:       db,
 		rabbitmq: rabbitmq,
 		redis:    redis,
+		log:      logger,
 	}
 }
 
 func (repo *Repository) Test(ctx context.Context, req *models.TestRequest) (*models.TestResponse, error) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	newCtx, span := otel.Tracer(TracerName).Start(ctx, "Test", trace.WithAttributes(
 		attribute.String("Name", req.Name),
 	))
@@ -58,6 +62,7 @@ func (repo *Repository) Test(ctx context.Context, req *models.TestRequest) (*mod
 }
 
 func (repo *Repository) Files(ctx context.Context, req *models.FileRequest) (*models.FileResponse, error) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	if req == nil {
 		return nil, errors.New("not valid request data")
 	}

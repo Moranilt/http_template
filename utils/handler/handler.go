@@ -12,7 +12,6 @@ import (
 	"github.com/Moranilt/http_template/utils/response"
 	"github.com/gorilla/mux"
 	"github.com/mitchellh/mapstructure"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -24,14 +23,14 @@ type HandlerMaker[ReqT any, RespT any] struct {
 	request     *http.Request
 	response    http.ResponseWriter
 	requestBody ReqT
-	logger      *logrus.Entry
+	logger      *logger.SLogger
 	caller      CallerFunc[ReqT, RespT]
 	err         error
 }
 
 type CallerFunc[ReqT any, RespT any] func(ctx context.Context, req ReqT) (RespT, error)
 
-func New[ReqT any, RespT any](w http.ResponseWriter, r *http.Request, logger *logger.Logger, caller CallerFunc[ReqT, RespT]) *HandlerMaker[ReqT, RespT] {
+func New[ReqT any, RespT any](w http.ResponseWriter, r *http.Request, logger *logger.SLogger, caller CallerFunc[ReqT, RespT]) *HandlerMaker[ReqT, RespT] {
 	log := logger.WithRequestInfo(r)
 	return &HandlerMaker[ReqT, RespT]{
 		logger:   log,
@@ -183,16 +182,16 @@ func (h *HandlerMaker[ReqT, RespT]) WithMultipart(maxMemory int64) *HandlerMaker
 }
 
 func (h *HandlerMaker[ReqT, RespT]) Run(successStatus, failedStatus int) {
-	h.logger.WithField("body", h.requestBody).Debug("request")
+	h.logger.With("body", h.requestBody).Debug("request")
 	if h.err != nil {
-		h.logger.Error(h.err)
+		h.logger.Error(h.err.Error())
 		response.ErrorResponse(h.response, h.err, http.StatusBadRequest)
 		return
 	}
 
 	resp, err := h.caller(h.request.Context(), h.requestBody)
 	if err != nil {
-		h.logger.Error(err)
+		h.logger.Error(err.Error())
 		response.ErrorResponse(h.response, err, failedStatus)
 		return
 	}
