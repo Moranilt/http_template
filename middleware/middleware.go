@@ -2,9 +2,11 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/Moranilt/http_template/logger"
+	"github.com/Moranilt/http_template/utils/response"
 	"github.com/google/uuid"
 )
 
@@ -17,6 +19,8 @@ const (
 type Middleware struct {
 	logger *logger.Logger
 }
+
+type EndpointMiddlewareFunc func(handleFunc http.HandlerFunc) http.HandlerFunc
 
 func New(l *logger.Logger) *Middleware {
 	return &Middleware{
@@ -33,5 +37,15 @@ func (m *Middleware) Default(next http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 		m.logger.WithRequestInfo(r).Info("Incoming request")
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (m *Middleware) AppTokenRequired(handleFunc http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get(TOKEN_HEADER) == "" {
+			response.ErrorResponse(w, fmt.Errorf("%s required", TOKEN_HEADER), http.StatusBadRequest)
+			return
+		}
+		handleFunc(w, r)
 	})
 }

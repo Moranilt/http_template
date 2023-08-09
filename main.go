@@ -112,10 +112,10 @@ func main() {
 
 	repo := repository.New(db, rebbitmqClient, redisClient)
 	svc := service.New(log, repo)
-	ep := endpoints.MakeEndpoints(svc)
+	mw := middleware.New(log)
+	ep := endpoints.MakeEndpoints(svc, mw)
 	health := endpoints.MakeHealth(db, rebbitmqClient, redisClient)
 	ep = append(ep, health)
-	mw := middleware.New(log)
 	server := transport.New(fmt.Sprintf(":%s", cfg.Port), ep, mw)
 
 	g, gCtx := errgroup.WithContext(ctx)
