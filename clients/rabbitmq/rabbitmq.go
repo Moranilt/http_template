@@ -339,6 +339,9 @@ func (client *Client) Close() error {
 	}
 
 	client.isReady = false
+	for len(client.readyCh) > 0 {
+		<-client.readyCh
+	}
 	close(client.readyCh)
 	return nil
 }
