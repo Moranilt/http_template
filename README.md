@@ -20,7 +20,11 @@ Tracing:
 ```bash
 go install golang.org/x/tools/cmd/gonew@latest
 ```
-3. Happy coding!
+3. Run:
+```bash
+gonew github.com/Moranilt/http_template example.com/project_name
+```
+4. Happy coding!
 
 ## Makefile
 To fast usage you can use makefile commands
