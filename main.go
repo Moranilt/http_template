@@ -37,6 +37,7 @@ const (
 
 func main() {
 	log := logger.NewSlog(os.Stdout)
+	logger.SetDefault(log)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {

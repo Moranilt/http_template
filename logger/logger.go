@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync/atomic"
 
 	"log/slog"
 
@@ -14,6 +15,20 @@ import (
 )
 
 type ContextKey string
+
+var defaultLogger atomic.Value
+
+func init() {
+	defaultLogger.Store(NewSlog(os.Stdout))
+}
+
+func SetDefault(l *SLogger) {
+	defaultLogger.Store(l)
+}
+
+func Default() *SLogger {
+	return defaultLogger.Load().(*SLogger)
+}
 
 const (
 	CtxRequestId ContextKey = "request_id"
@@ -40,8 +55,6 @@ func NewSlog(output io.Writer) *SLogger {
 		Level:       LevelTrace,
 		ReplaceAttr: renameLevel,
 	}))
-
-	slog.SetDefault(l)
 
 	logger := &SLogger{
 		l,
