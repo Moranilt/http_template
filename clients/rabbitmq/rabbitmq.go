@@ -45,6 +45,9 @@ func (c *Client) setIsReady(ready bool) {
 	c.mu.Lock()
 	c.isReady = ready
 	c.mu.Unlock()
+	go func(ch chan bool, ready bool) {
+		ch <- ready
+	}(c.readyCh, ready)
 }
 
 func (c *Client) getIsReady() bool {
@@ -68,7 +71,7 @@ func Init(ctx context.Context, queueName string, log *logger.SLogger, creds cred
 		logger:    log,
 		queueName: queueName,
 		done:      make(chan bool),
-		readyCh:   make(chan bool, 3),
+		readyCh:   make(chan bool, 1),
 	}
 	go client.handleReconnect(ctx, creds.SourceString())
 
@@ -78,8 +81,7 @@ func Init(ctx context.Context, queueName string, log *logger.SLogger, creds cred
 
 func (client *Client) handleReconnect(ctx context.Context, addr string) {
 	for {
-		client.isReady = false
-		client.readyCh <- false
+		client.setIsReady(false)
 		client.logger.InfoContext(ctx, "Attempting to connect")
 
 		conn, err := client.connect(addr)
@@ -116,8 +118,6 @@ func (client *Client) connect(addr string) (*amqp.Connection, error) {
 func (client *Client) handleReInit(ctx context.Context, conn *amqp.Connection) bool {
 	for {
 		client.setIsReady(false)
-		client.readyCh <- false
-
 		err := client.init(conn)
 
 		if err != nil {
@@ -178,7 +178,6 @@ func (client *Client) init(conn *amqp.Connection) error {
 
 	client.changeChannel(ch)
 	client.setIsReady(true)
-	client.readyCh <- true
 	client.logger.Info("Setup!")
 
 	return nil
@@ -338,7 +337,6 @@ func (client *Client) Close() error {
 		return err
 	}
 
-	client.isReady = false
 	for len(client.readyCh) > 0 {
 		<-client.readyCh
 	}
