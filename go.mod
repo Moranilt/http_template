@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/golang-migrate/migrate v3.5.4+incompatible
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/vault/api v1.9.2
 	github.com/jmoiron/sqlx v1.3.5
