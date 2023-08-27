@@ -9,7 +9,7 @@ import (
 )
 
 type Service interface {
-	Test(http.ResponseWriter, *http.Request)
+	CreateUser(http.ResponseWriter, *http.Request)
 	Files(w http.ResponseWriter, r *http.Request)
 }
 
@@ -25,9 +25,9 @@ func New(log *logger.SLogger, repo *repository.Repository) Service {
 	}
 }
 
-func (s *service) Test(w http.ResponseWriter, r *http.Request) {
-	handler.New(w, r, s.log, s.repo.Test).
-		WithQuery().
+func (s *service) CreateUser(w http.ResponseWriter, r *http.Request) {
+	handler.New(w, r, s.log, s.repo.CreateUser).
+		WithJson().
 		Run(http.StatusOK, http.StatusBadRequest)
 }
 

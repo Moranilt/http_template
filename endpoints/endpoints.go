@@ -21,9 +21,9 @@ type Endpoint struct {
 func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoint {
 	return []Endpoint{
 		{
-			Pattern:    "/test",
-			HandleFunc: service.Test,
-			Methods:    []string{http.MethodGet},
+			Pattern:    "/user",
+			HandleFunc: service.CreateUser,
+			Methods:    []string{http.MethodPost},
 		},
 		{
 			Pattern:    "/files",
@@ -34,7 +34,7 @@ func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoin
 	}
 }
 
-func MakeHealth(db *database.Client, rabbitmq *rabbitmq.Client, redis *redis.Client) Endpoint {
+func MakeHealth(db *database.Client, rabbitmq rabbitmq.RabbitMQClient, redis *redis.Client) Endpoint {
 	return Endpoint{
 		Pattern: "/health",
 		HandleFunc: healthcheck.HandlerFunc(
