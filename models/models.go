@@ -3,11 +3,13 @@ package models
 import "mime/multipart"
 
 type TestRequest struct {
-	Name string `json:"name"`
+	Firstname  string  `json:"fistname"`
+	Lastname   string  `json:"lastname"`
+	Patronymic *string `json:"patronymic"`
 }
 
 type TestResponse struct {
-	Name string `json:"name"`
+	ID string `json:"id"`
 }
 
 type FileRequest struct {

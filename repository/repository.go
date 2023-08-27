@@ -16,6 +16,18 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const (
+	QUERY_InsertUser = "INSERT INTO tests (firstname, lastname, patronymic) VALUES ($1, $2, $3) RETURNING id"
+)
+
+const (
+	REDIS_TTL = 30 * time.Second
+)
+
+const (
+	ERR_BodyRequired = "required body is missing"
+)
+
 const TracerName string = "repository"
 
 type Repository struct {
@@ -34,19 +46,32 @@ func New(db *database.Client, rabbitmq rabbitmq.RabbitMQClient, redis *redis.Cli
 	}
 }
 
-func (repo *Repository) Test(ctx context.Context, req *models.TestRequest) (*models.TestResponse, error) {
+func (repo *Repository) CreateUser(ctx context.Context, req *models.TestRequest) (*models.TestResponse, error) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	newCtx, span := otel.Tracer(TracerName).Start(ctx, "Test", trace.WithAttributes(
-		attribute.String("Name", req.Name),
+		attribute.String("Firstname", req.Firstname),
+		attribute.String("Lastname", req.Lastname),
+		attribute.String("Patronymic", *req.Patronymic),
 	))
 	defer span.End()
 
-	err := repo.redis.Set(newCtx, "test", "name", 30*time.Second).Err()
+	row := repo.db.QueryRowxContext(newCtx, QUERY_InsertUser, req.Firstname, req.Lastname, *req.Patronymic)
+	if row.Err() != nil {
+		return nil, row.Err()
+	}
+
+	var lastInsertId string
+	err := row.Scan(&lastInsertId)
 	if err != nil {
 		return nil, err
 	}
 
 	b, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+
+	err = repo.redis.Set(newCtx, lastInsertId, b, REDIS_TTL).Err()
 	if err != nil {
 		return nil, err
 	}
@@ -57,14 +82,14 @@ func (repo *Repository) Test(ctx context.Context, req *models.TestRequest) (*mod
 	}
 
 	return &models.TestResponse{
-		Name: req.Name,
+		ID: lastInsertId,
 	}, nil
 }
 
 func (repo *Repository) Files(ctx context.Context, req *models.FileRequest) (*models.FileResponse, error) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	if req == nil {
-		return nil, errors.New("not valid request data")
+		return nil, errors.New(ERR_BodyRequired)
 	}
 	var fileNames []string
 	for _, f := range req.Files {

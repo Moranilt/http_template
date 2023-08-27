@@ -21,9 +21,9 @@ type Endpoint struct {
 func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoint {
 	return []Endpoint{
 		{
-			Pattern:    "/test",
-			HandleFunc: service.Test,
-			Methods:    []string{http.MethodGet},
+			Pattern:    "/user",
+			HandleFunc: service.CreateUser,
+			Methods:    []string{http.MethodPost},
 		},
 		{
 			Pattern:    "/files",
