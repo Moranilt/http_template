@@ -20,12 +20,12 @@ const TracerName string = "repository"
 
 type Repository struct {
 	db       *database.Client
-	rabbitmq *rabbitmq.Client
+	rabbitmq rabbitmq.RabbitMQClient
 	redis    *redis.Client
 	log      *logger.SLogger
 }
 
-func New(db *database.Client, rabbitmq *rabbitmq.Client, redis *redis.Client, logger *logger.SLogger) *Repository {
+func New(db *database.Client, rabbitmq rabbitmq.RabbitMQClient, redis *redis.Client, logger *logger.SLogger) *Repository {
 	return &Repository{
 		db:       db,
 		rabbitmq: rabbitmq,

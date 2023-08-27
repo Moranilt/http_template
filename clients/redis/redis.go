@@ -12,6 +12,11 @@ type Client struct {
 	*redis.Client
 }
 
+type RedisClient interface {
+	redis.Client
+	Check(ctx context.Context) error
+}
+
 func (r *Client) Check(ctx context.Context) error {
 	return r.Ping(ctx).Err()
 }

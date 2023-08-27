@@ -27,6 +27,17 @@ var (
 	rabbitMQClient *Client
 )
 
+type ReadMsgCallback func(ctx context.Context, d RabbitDelivery) error
+
+type RabbitMQClient interface {
+	Check(ctx context.Context) error
+	ReadMsgs(ctx context.Context, maxAmount int, wait time.Duration, callback ReadMsgCallback)
+	Push(ctx context.Context, data []byte) error
+	UnsafePush(ctx context.Context, data []byte) error
+	Consume() (<-chan amqp.Delivery, error)
+	Close() error
+}
+
 type Client struct {
 	logger          *logger.SLogger
 	queueName       string
@@ -66,7 +77,7 @@ func (c *Client) Check(ctx context.Context) error {
 	return nil
 }
 
-func Init(ctx context.Context, queueName string, log *logger.SLogger, creds credentials.SourceStringer) *Client {
+func Init(ctx context.Context, queueName string, log *logger.SLogger, creds credentials.SourceStringer) RabbitMQClient {
 	client := Client{
 		logger:    log,
 		queueName: queueName,
@@ -183,7 +194,7 @@ func (client *Client) init(conn *amqp.Connection) error {
 	return nil
 }
 
-func (client *Client) ReadMsgs(ctx context.Context, maxAmount int, callback func(d amqp.Delivery) error) {
+func (client *Client) ReadMsgs(ctx context.Context, maxAmount int, wait time.Duration, callback ReadMsgCallback) {
 	stopReceive := make(chan bool, 1)
 
 	for {
@@ -223,11 +234,11 @@ func (client *Client) ReadMsgs(ctx context.Context, maxAmount int, callback func
 						case d := <-deliveries:
 							if counter == maxAmount {
 								counter = 1
-								<-time.After(15 * time.Second)
+								<-time.After(wait)
 							} else {
 								counter++
 							}
-							err := callback(d)
+							err := callback(ctx, NewDelivery(d))
 							if err != nil {
 								continue
 							}

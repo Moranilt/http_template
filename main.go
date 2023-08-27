@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/Moranilt/http_template/clients/credentials"
 	"github.com/Moranilt/http_template/clients/database"
@@ -25,7 +26,6 @@ import (
 	"github.com/golang-migrate/migrate"
 	"github.com/golang-migrate/migrate/database/postgres"
 	_ "github.com/golang-migrate/migrate/source/file"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -98,7 +98,7 @@ func main() {
 	}
 
 	rebbitmqClient := rabbitmq.Init(ctx, RABBITMQ_QUEUE_NAME, log, rabbitMQCreds)
-	rabbitmq.ReadMsgs(ctx, 5, ConsumeMessage)
+	rabbitmq.ReadMsgs(ctx, 5, 5*time.Second, ConsumeMessage)
 
 	// Redis
 	redisCreds, err := vault.GetCreds[credentials.Redis](ctx, cfg.Vault.RedisCreds)
@@ -143,14 +143,14 @@ func main() {
 //
 // Requeue received message
 // If it was requeued already - just Ack this
-func ConsumeMessage(d amqp.Delivery) error {
-	if d.Redelivered {
+func ConsumeMessage(ctx context.Context, d rabbitmq.RabbitDelivery) error {
+	if d.Redelivered() {
 		d.Ack(true)
-		fmt.Println("Message redelivered: ", string(d.Body), d.DeliveryTag)
+		fmt.Println("Message redelivered: ", string(d.Body()), d.DeliveryTag())
 		return errors.New("message redelivered")
 	}
 
-	fmt.Println("Message: ", string(d.Body), d.DeliveryTag, d.MessageCount)
+	fmt.Println("Message: ", string(d.Body()), d.DeliveryTag(), d.MessageCount())
 	d.Nack(false, true)
 	return nil
 }
