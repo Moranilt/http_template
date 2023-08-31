@@ -18,7 +18,7 @@ services:
       - "14268:14268"
 
   vault:
-    image: vault
+    image: hashicorp/vault
     ports:
       - "8200:8200"
     cap_add:
@@ -32,7 +32,7 @@ services:
       - vault_init
 
   vault_init:
-    image: vault
+    image: hashicorp/vault
     depends_on:
       - vault
     restart: on-failure
