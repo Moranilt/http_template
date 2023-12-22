@@ -1,8 +1,9 @@
 package response
 
 import (
-	"encoding/json"
 	"net/http"
+
+	go_json "github.com/goccy/go-json"
 )
 
 type DefaultResponse[T any, E any] struct {
@@ -12,24 +13,23 @@ type DefaultResponse[T any, E any] struct {
 
 func Default(w http.ResponseWriter, body any, responseErr any, status int) {
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(DefaultResponse[any, *any]{
+	go_json.NewEncoder(w).Encode(DefaultResponse[any, *any]{
 		Error: &responseErr,
 		Body:  body,
 	})
 }
 
-func ErrorResponse(w http.ResponseWriter, responseErr error, status int) {
+func ErrorResponse(w http.ResponseWriter, responseErr any, status int) {
 	w.WriteHeader(status)
-	err := responseErr.Error()
-	json.NewEncoder(w).Encode(DefaultResponse[any, string]{
-		Error: err,
+	go_json.NewEncoder(w).Encode(DefaultResponse[any, any]{
+		Error: responseErr,
 		Body:  nil,
 	})
 }
 
 func SuccessResponse(w http.ResponseWriter, body any, status int) {
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(DefaultResponse[any, *string]{
+	go_json.NewEncoder(w).Encode(DefaultResponse[any, *any]{
 		Error: nil,
 		Body:  body,
 	})

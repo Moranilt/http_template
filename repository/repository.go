@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/Moranilt/http_template/clients/database"
@@ -11,6 +10,7 @@ import (
 	"github.com/Moranilt/http_template/clients/redis"
 	"github.com/Moranilt/http_template/logger"
 	"github.com/Moranilt/http_template/models"
+	"github.com/Moranilt/http_template/utils/tiny_errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -22,10 +22,6 @@ const (
 
 const (
 	REDIS_TTL = 30 * time.Second
-)
-
-const (
-	ERR_BodyRequired = "required body is missing"
 )
 
 const TracerName string = "repository"
@@ -46,7 +42,7 @@ func New(db *database.Client, rabbitmq rabbitmq.RabbitMQClient, redis *redis.Cli
 	}
 }
 
-func (repo *Repository) CreateUser(ctx context.Context, req *models.TestRequest) (*models.TestResponse, error) {
+func (repo *Repository) CreateUser(ctx context.Context, req *models.TestRequest) (*models.TestResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	newCtx, span := otel.Tracer(TracerName).Start(ctx, "Test", trace.WithAttributes(
 		attribute.String("Firstname", req.Firstname),
@@ -57,28 +53,28 @@ func (repo *Repository) CreateUser(ctx context.Context, req *models.TestRequest)
 
 	row := repo.db.QueryRowxContext(newCtx, QUERY_InsertUser, req.Firstname, req.Lastname, *req.Patronymic)
 	if row.Err() != nil {
-		return nil, row.Err()
+		return nil, tiny_errors.New(models.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
 	}
 
 	var lastInsertId string
 	err := row.Scan(&lastInsertId)
 	if err != nil {
-		return nil, err
+		return nil, tiny_errors.New(models.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
 	}
 
 	b, err := json.Marshal(req)
 	if err != nil {
-		return nil, err
+		return nil, tiny_errors.New(models.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
 	}
 
 	err = repo.redis.Set(newCtx, lastInsertId, b, REDIS_TTL).Err()
 	if err != nil {
-		return nil, err
+		return nil, tiny_errors.New(models.ERR_CODE_Redis, tiny_errors.Message(err.Error()))
 	}
 
 	err = repo.rabbitmq.Push(newCtx, b)
 	if err != nil {
-		return nil, err
+		return nil, tiny_errors.New(models.ERR_CODE_RabbitMQ, tiny_errors.Message(err.Error()))
 	}
 
 	return &models.TestResponse{
@@ -86,10 +82,10 @@ func (repo *Repository) CreateUser(ctx context.Context, req *models.TestRequest)
 	}, nil
 }
 
-func (repo *Repository) Files(ctx context.Context, req *models.FileRequest) (*models.FileResponse, error) {
+func (repo *Repository) Files(ctx context.Context, req *models.FileRequest) (*models.FileResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	if req == nil {
-		return nil, errors.New(ERR_BodyRequired)
+		return nil, models.ERR_BodyRequiredTiny
 	}
 	var fileNames []string
 	for _, f := range req.Files {
@@ -104,12 +100,16 @@ func (repo *Repository) Files(ctx context.Context, req *models.FileRequest) (*mo
 
 	b, err := json.Marshal(req)
 	if err != nil {
-		return nil, err
+		return nil, tiny_errors.New(models.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
 	}
 
 	err = repo.rabbitmq.Push(newCtx, b)
 	if err != nil {
-		return nil, err
+		return nil, tiny_errors.New(
+			models.ERR_CODE_RabbitMQ,
+			tiny_errors.Message(err.Error()),
+			tiny_errors.Detail("event", "Push"),
+		)
 	}
 
 	return &models.FileResponse{

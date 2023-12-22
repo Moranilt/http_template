@@ -10,6 +10,7 @@ import (
 
 	"github.com/Moranilt/http_template/logger"
 	"github.com/Moranilt/http_template/utils/response"
+	"github.com/Moranilt/http_template/utils/tiny_errors"
 	"github.com/gorilla/mux"
 	"github.com/mitchellh/mapstructure"
 )
@@ -28,7 +29,7 @@ type HandlerMaker[ReqT any, RespT any] struct {
 	err         error
 }
 
-type CallerFunc[ReqT any, RespT any] func(ctx context.Context, req ReqT) (RespT, error)
+type CallerFunc[ReqT any, RespT any] func(ctx context.Context, req ReqT) (RespT, tiny_errors.ErrorHandler)
 
 func New[ReqT any, RespT any](w http.ResponseWriter, r *http.Request, logger *logger.SLogger, caller CallerFunc[ReqT, RespT]) *HandlerMaker[ReqT, RespT] {
 	log := logger.WithRequestInfo(r)
@@ -181,7 +182,7 @@ func (h *HandlerMaker[ReqT, RespT]) WithMultipart(maxMemory int64) *HandlerMaker
 	return h
 }
 
-func (h *HandlerMaker[ReqT, RespT]) Run(successStatus, failedStatus int) {
+func (h *HandlerMaker[ReqT, RespT]) Run(successStatus int) {
 	h.logger.With("body", h.requestBody).Debug("request")
 	if h.err != nil {
 		h.logger.Error(h.err.Error())
@@ -192,7 +193,7 @@ func (h *HandlerMaker[ReqT, RespT]) Run(successStatus, failedStatus int) {
 	resp, err := h.caller(h.request.Context(), h.requestBody)
 	if err != nil {
 		h.logger.Error(err.Error())
-		response.ErrorResponse(h.response, err, failedStatus)
+		response.ErrorResponse(h.response, err, err.GetHTTPStatus())
 		return
 	}
 	response.SuccessResponse(h.response, resp, successStatus)

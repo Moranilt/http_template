@@ -15,6 +15,7 @@ import (
 
 	"github.com/Moranilt/http_template/logger"
 	"github.com/Moranilt/http_template/utils/response"
+	"github.com/Moranilt/http_template/utils/tiny_errors"
 	"github.com/gorilla/mux"
 )
 
@@ -41,8 +42,8 @@ var (
 	errMessageRequired = "message required"
 )
 
-func makeMockedFunction[ReqT any, RespT any](requestValidator func(request ReqT) RespT, err error) CallerFunc[ReqT, RespT] {
-	return func(ctx context.Context, request ReqT) (RespT, error) {
+func makeMockedFunction[ReqT any, RespT any](requestValidator func(request ReqT) RespT, err tiny_errors.ErrorHandler) CallerFunc[ReqT, RespT] {
+	return func(ctx context.Context, request ReqT) (RespT, tiny_errors.ErrorHandler) {
 		resp := requestValidator(request)
 
 		return resp, err
@@ -407,7 +408,7 @@ func BenchmarkMultipart(b *testing.B) {
 	router.HandleFunc(routePath, func(w http.ResponseWriter, r *http.Request) {
 		newHandler := New(w, r, logger, testHandler)
 		newHandler = newHandler.WithMultipart(32 << 20)
-		newHandler.Run(http.StatusOK, http.StatusBadRequest)
+		newHandler.Run(http.StatusOK)
 	}).Methods(http.MethodPost)
 
 	server := httptest.NewServer(router)
@@ -496,7 +497,7 @@ func (cntr *testHandleFuncController[ReqT, RespT]) Run(t testing.TB, logger *log
 			newHandler = newHandler.WithMultipart(32 << 20)
 		}
 
-		newHandler.Run(http.StatusOK, http.StatusBadRequest)
+		newHandler.Run(http.StatusOK)
 	}).Methods(http.MethodPost)
 
 	client := http.Client{}

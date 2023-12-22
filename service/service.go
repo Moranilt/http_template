@@ -28,11 +28,11 @@ func New(log *logger.SLogger, repo *repository.Repository) Service {
 func (s *service) CreateUser(w http.ResponseWriter, r *http.Request) {
 	handler.New(w, r, s.log, s.repo.CreateUser).
 		WithJson().
-		Run(http.StatusOK, http.StatusBadRequest)
+		Run(http.StatusOK)
 }
 
 func (s *service) Files(w http.ResponseWriter, r *http.Request) {
 	handler.New(w, r, s.log, s.repo.Files).
-		WithMultipart(32<<20).
-		Run(http.StatusOK, http.StatusBadRequest)
+		WithMultipart(32 << 20).
+		Run(http.StatusOK)
 }
