@@ -1,6 +1,10 @@
 package models
 
-import "mime/multipart"
+import (
+	"mime/multipart"
+
+	"github.com/Moranilt/http_template/utils/tiny_errors"
+)
 
 type TestRequest struct {
 	Firstname  string  `json:"fistname"`
@@ -23,3 +27,20 @@ type FileResponse struct {
 	Files       []*multipart.FileHeader `mapstructure:"file[]" json:"files"`
 	OneMoreFile *multipart.FileHeader   `mapstructure:"one_more_file" json:"one_more_file"`
 }
+
+const (
+	_ = iota
+	ERR_CODE_Database
+	ERR_CODE_Marshal
+	ERR_CODE_Redis
+	ERR_CODE_RabbitMQ
+	ERR_CODE_BodyRequired
+)
+
+const (
+	ERR_BodyRequired = "required body is missing"
+)
+
+var (
+	ERR_BodyRequiredTiny = tiny_errors.New(ERR_CODE_BodyRequired, tiny_errors.Message(ERR_BodyRequired))
+)

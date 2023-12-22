@@ -64,8 +64,8 @@ func TestFiles(t *testing.T) {
 
 	t.Run("empty request", func(t *testing.T) {
 		response, err := mockedRepo.repo.Files(context.Background(), nil)
-		if err.Error() != ERR_BodyRequired {
-			t.Errorf("Expected error %q but got %q", ERR_BodyRequired, err)
+		if err.Error() != models.ERR_BodyRequired {
+			t.Errorf("Expected error %q but got %q", models.ERR_BodyRequired, err)
 		}
 
 		if response != nil {
@@ -80,7 +80,7 @@ func TestFiles(t *testing.T) {
 
 		response, err := mockedRepo.repo.Files(context.Background(), mockedRequest)
 		if err.Error() != expectedError.Error() {
-			t.Errorf("Expected error %q but got %q", ERR_BodyRequired, err)
+			t.Errorf("Expected error %q but got %q", models.ERR_BodyRequired, err)
 		}
 
 		if response != nil {
