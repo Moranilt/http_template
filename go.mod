@@ -3,7 +3,7 @@ module github.com/Moranilt/http_template
 go 1.21
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.5.1
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/goccy/go-json v0.10.2
 	github.com/golang-migrate/migrate v3.5.4+incompatible
