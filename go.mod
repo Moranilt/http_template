@@ -7,7 +7,7 @@ require (
 	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/goccy/go-json v0.10.2
 	github.com/golang-migrate/migrate v3.5.4+incompatible
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/vault/api v1.10.0
 	github.com/jmoiron/sqlx v1.3.5
