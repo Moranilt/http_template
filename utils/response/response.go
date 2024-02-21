@@ -11,25 +11,25 @@ type DefaultResponse[T any, E any] struct {
 	Body  T `json:"body"`
 }
 
-func Default(w http.ResponseWriter, body any, responseErr any, status int) {
+func Default[Body any, Err any](w http.ResponseWriter, body Body, responseErr Err, status int) {
 	w.WriteHeader(status)
-	go_json.NewEncoder(w).Encode(DefaultResponse[any, *any]{
-		Error: &responseErr,
+	go_json.NewEncoder(w).Encode(DefaultResponse[Body, Err]{
+		Error: responseErr,
 		Body:  body,
 	})
 }
 
-func ErrorResponse(w http.ResponseWriter, responseErr any, status int) {
+func ErrorResponse[Err any](w http.ResponseWriter, responseErr Err, status int) {
 	w.WriteHeader(status)
-	go_json.NewEncoder(w).Encode(DefaultResponse[any, any]{
+	go_json.NewEncoder(w).Encode(DefaultResponse[any, Err]{
 		Error: responseErr,
 		Body:  nil,
 	})
 }
 
-func SuccessResponse(w http.ResponseWriter, body any, status int) {
+func SuccessResponse[Body any](w http.ResponseWriter, body Body, status int) {
 	w.WriteHeader(status)
-	go_json.NewEncoder(w).Encode(DefaultResponse[any, *any]{
+	go_json.NewEncoder(w).Encode(DefaultResponse[Body, *string]{
 		Error: nil,
 		Body:  body,
 	})
