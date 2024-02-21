@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	QUERY_InsertUser = "INSERT INTO tests (firstname, lastname, patronymic) VALUES ($1, $2, $3) RETURNING id"
+	QUERY_InsertUser = "INSERT INTO test (firstname, lastname, patronymic) VALUES ($1, $2, $3) RETURNING id"
 )
 
 const (
