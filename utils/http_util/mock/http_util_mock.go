@@ -1,6 +1,7 @@
 package http_util_mock
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -10,8 +11,9 @@ import (
 )
 
 const (
-	ERR_Unexpected_Url  = "call %q expected url %q, got %q"
-	ERR_Unexpected_Data = "call %q expected data %v, got %v"
+	ERR_Unexpected_Url     = "call %q expected url %q, got %q"
+	ERR_Unexpected_Data    = "call %q expected data %v, got %v"
+	ERR_Unexpected_Headers = "call %q expected headers %v, got %v"
 )
 
 type MockedClient struct {
@@ -25,6 +27,7 @@ type mockClientData struct {
 	url      string
 	body     []byte
 	response *http.Response
+	headers  map[string]string
 	err      error
 }
 
@@ -37,7 +40,7 @@ func NewMockClient(expectCallback func(), actualCallback func()) *MockedClient {
 	}
 }
 
-func (m *MockedClient) ExpectPost(url string, body []byte, err error, response *http.Response) {
+func (m *MockedClient) ExpectPost(url string, body []byte, err error, response *http.Response, headers map[string]string) {
 	if m.expectCallback != nil {
 		m.expectCallback()
 	}
@@ -45,11 +48,12 @@ func (m *MockedClient) ExpectPost(url string, body []byte, err error, response *
 		url:      url,
 		body:     body,
 		response: response,
+		headers:  headers,
 		err:      err,
 	}, err)
 }
 
-func (m *MockedClient) ExpectGet(url string, err error, response *http.Response) {
+func (m *MockedClient) ExpectGet(url string, err error, response *http.Response, headers map[string]string) {
 	if m.expectCallback != nil {
 		m.expectCallback()
 	}
@@ -57,6 +61,7 @@ func (m *MockedClient) ExpectGet(url string, err error, response *http.Response)
 		url:      url,
 		body:     nil,
 		response: response,
+		headers:  headers,
 		err:      err,
 	}, err)
 }
@@ -69,11 +74,11 @@ func (m *MockedClient) Reset() {
 	m.history.Clear()
 }
 
-func (m *MockedClient) Post(url string, body []byte) (*http.Response, error) {
+func (m *MockedClient) Post(ctx context.Context, url string, body []byte, headers map[string]string) (*http.Response, error) {
 	if m.actualCallback != nil {
 		m.actualCallback()
 	}
-	item, err := m.checkCall("Post", url, body)
+	item, err := m.checkCall("Post", url, body, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -81,11 +86,11 @@ func (m *MockedClient) Post(url string, body []byte) (*http.Response, error) {
 	return item.Data.response, item.Data.err
 }
 
-func (m *MockedClient) Get(url string) (*http.Response, error) {
+func (m *MockedClient) Get(ctx context.Context, url string, headers map[string]string) (*http.Response, error) {
 	if m.actualCallback != nil {
 		m.actualCallback()
 	}
-	item, err := m.checkCall("Get", url, nil)
+	item, err := m.checkCall("Get", url, nil, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +98,7 @@ func (m *MockedClient) Get(url string) (*http.Response, error) {
 	return item.Data.response, item.Data.err
 }
 
-func (m *MockedClient) checkCall(name string, url string, body []byte) (*mock.MockHistoryItem[*mockClientData], error) {
+func (m *MockedClient) checkCall(name string, url string, body []byte, headers map[string]string) (*mock.MockHistoryItem[*mockClientData], error) {
 	item, err := m.history.Get(name)
 	if err != nil {
 		return nil, err
@@ -105,6 +110,10 @@ func (m *MockedClient) checkCall(name string, url string, body []byte) (*mock.Mo
 
 	if !reflect.DeepEqual(item.Data.body, body) {
 		return nil, fmt.Errorf(ERR_Unexpected_Data, name, string(item.Data.body), string(body))
+	}
+
+	if !reflect.DeepEqual(item.Data.headers, headers) {
+		return nil, fmt.Errorf(ERR_Unexpected_Headers, name, item.Data.headers, headers)
 	}
 
 	return item, nil
