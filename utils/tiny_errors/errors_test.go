@@ -12,14 +12,14 @@ func TestErrors(t *testing.T) {
 		err := New(2, Message("error message"))
 
 		assert.Equal(t, 2, err.GetCode())
-		assert.Equal(t, "{\"http_status\":400,\"http_message\":\"Bad Request\",\"code\":2,\"message\":\"error message\",\"details\":null,\"errors\":[]}", err.JSON())
+		assert.Equal(t, "{\"code\":2,\"message\":\"error message\",\"details\":null,\"errors\":[]}", err.JSON())
 	})
 
 	t.Run("code, message and details", func(t *testing.T) {
 		err := New(2, Message("error message"), Detail("name", "John"))
 
 		assert.Equal(t, 2, err.GetCode())
-		assert.Equal(t, "{\"http_status\":400,\"http_message\":\"Bad Request\",\"code\":2,\"message\":\"error message\",\"details\":{\"name\":\"John\"},\"errors\":[]}", err.JSON())
+		assert.Equal(t, "{\"code\":2,\"message\":\"error message\",\"details\":{\"name\":\"John\"},\"errors\":[]}", err.JSON())
 	})
 
 	t.Run("error message", func(t *testing.T) {
@@ -41,7 +41,7 @@ func TestErrors(t *testing.T) {
 		err := New(2, Message("error message"), Err(secondError))
 
 		assert.Equal(t, "error message", err.Error())
-		assert.Equal(t, "{\"http_status\":400,\"http_message\":\"Bad Request\",\"code\":2,\"message\":\"error message\",\"details\":null,\"errors\":[{\"code\":3,\"message\":\"error message 2\",\"details\":null}]}", err.JSON())
+		assert.Equal(t, "{\"code\":2,\"message\":\"error message\",\"details\":null,\"errors\":[{\"code\":3,\"message\":\"error message 2\",\"details\":null}]}", err.JSON())
 	})
 
 	t.Run("init array of errors", func(t *testing.T) {
@@ -59,7 +59,7 @@ func TestErrors(t *testing.T) {
 		t.Run("without message option", func(t *testing.T) {
 			err := New(ErrCodeBodyRequired)
 			expected := fmt.Sprintf(
-				"{\"http_status\":400,\"http_message\":\"Bad Request\",\"code\":%d,\"message\":\"%s\",\"details\":null,\"errors\":[]}",
+				"{\"code\":%d,\"message\":\"%s\",\"details\":null,\"errors\":[]}",
 				ErrCodeBodyRequired, errors[ErrCodeBodyRequired],
 			)
 
@@ -69,7 +69,7 @@ func TestErrors(t *testing.T) {
 		t.Run("with message option", func(t *testing.T) {
 			err := New(ErrCodeBodyRequired, Message("message option"))
 			expected := fmt.Sprintf(
-				"{\"http_status\":400,\"http_message\":\"Bad Request\",\"code\":%d,\"message\":\"message option\",\"details\":null,\"errors\":[]}",
+				"{\"code\":%d,\"message\":\"message option\",\"details\":null,\"errors\":[]}",
 				ErrCodeBodyRequired,
 			)
 
@@ -93,7 +93,7 @@ func TestErrors(t *testing.T) {
 		t.Run("message args", func(t *testing.T) {
 			err := New(ErrCodeValidation, MessageArgs("fieldname"))
 			expected := fmt.Sprintf(
-				"{\"http_status\":400,\"http_message\":\"Bad Request\",\"code\":%d,\"message\":\"%s\",\"details\":null,\"errors\":[]}",
+				"{\"code\":%d,\"message\":\"%s\",\"details\":null,\"errors\":[]}",
 				ErrCodeValidation, fmt.Sprintf(errors[ErrCodeValidation], "fieldname"),
 			)
 
