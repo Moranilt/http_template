@@ -3,6 +3,7 @@ package http_util
 import (
 	"bytes"
 	"context"
+	"net"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -29,7 +30,8 @@ type client struct {
 }
 
 type Client interface {
-	Post(url string, body []byte) (*http.Response, error)
+	Post(ctx context.Context, url string, body []byte, headers map[string]string) (*http.Response, error)
+	Get(ctx context.Context, url string, headers map[string]string) (*http.Response, error)
 }
 
 func New() Client {
@@ -38,11 +40,12 @@ func New() Client {
 	}
 }
 
-func (c *client) Post(url string, body []byte) (*http.Response, error) {
-	request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+func (c *client) Post(ctx context.Context, url string, body []byte, headers map[string]string) (*http.Response, error) {
+	request, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
+
 	request, cancel := c.setRequestTimeout(request)
 	defer cancel()
 	res, err := c.client.Do(request)
@@ -53,8 +56,8 @@ func (c *client) Post(url string, body []byte) (*http.Response, error) {
 	return res, nil
 }
 
-func (c *client) Get(url string) (*http.Response, error) {
-	request, err := http.NewRequest("GET", url, nil)
+func (c *client) Get(ctx context.Context, url string, headers map[string]string) (*http.Response, error) {
+	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -71,4 +74,22 @@ func (c *client) Get(url string) (*http.Response, error) {
 func (c *client) setRequestTimeout(req *http.Request) (*http.Request, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(req.Context(), Timeout())
 	return req.WithContext(ctx), cancel
+}
+
+func GetIP(req *http.Request) string {
+	if req == nil {
+		return ""
+	}
+	ip := req.Header.Get("X-Real-IP")
+	if ip == "" {
+		ip = req.Header.Get("X-Forwarded-For")
+	}
+	if ip == "" {
+		ip, _, err := net.SplitHostPort(req.RemoteAddr)
+		if err != nil {
+			ip = req.RemoteAddr
+		}
+		return ip
+	}
+	return ip
 }

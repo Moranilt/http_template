@@ -1,6 +1,7 @@
 package http_util_mock
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -73,10 +74,10 @@ func TestMockHttpUtil(t *testing.T) {
 			mockClient := NewMockClient(nil, nil)
 
 			if test.runExpect {
-				mockClient.ExpectPost(test.url, test.body, nil, test.response)
+				mockClient.ExpectPost(test.url, test.body, nil, test.response, nil)
 			}
 
-			resp, err := mockClient.Post(test.url, test.body)
+			resp, err := mockClient.Post(context.Background(), test.url, test.body, nil)
 			if err != nil && err.Error() != test.expectedError.Error() {
 				t.Errorf("not expected error: %v", err)
 			}
@@ -96,10 +97,10 @@ func TestMockHttpUtil(t *testing.T) {
 			mockClient := NewMockClient(nil, nil)
 
 			if test.runExpect {
-				mockClient.ExpectGet(test.url, nil, test.response)
+				mockClient.ExpectGet(test.url, nil, test.response, nil)
 			}
 
-			resp, err := mockClient.Get(test.url)
+			resp, err := mockClient.Get(context.Background(), test.url, nil)
 			if err != nil && err.Error() != test.expectedError.Error() {
 				t.Errorf("not expected error: %v", err)
 			}
@@ -161,10 +162,10 @@ func TestHttpCheckCall(t *testing.T) {
 			if test.runExpects {
 				mockClient.ExpectPost(test.expectedURL, test.expectedBody, nil, &http.Response{
 					StatusCode: http.StatusOK,
-				})
+				}, nil)
 			}
 
-			item, err := mockClient.checkCall("Post", test.actualURL, test.unexpectedBody)
+			item, err := mockClient.checkCall("Post", test.actualURL, test.unexpectedBody, nil)
 			if err.Error() != test.expectedError.Error() {
 				t.Errorf("got error %q, expected %q", err, test.expectedError)
 			}
@@ -178,7 +179,7 @@ func TestHttpCheckCall(t *testing.T) {
 
 func TestHttpClientReset(t *testing.T) {
 	mockClient := NewMockClient(nil, nil)
-	mockClient.ExpectGet("http://test.com", nil, &http.Response{StatusCode: http.StatusOK})
+	mockClient.ExpectGet("http://test.com", nil, &http.Response{StatusCode: http.StatusOK}, nil)
 
 	mockClient.Reset()
 

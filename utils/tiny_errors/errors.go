@@ -24,8 +24,8 @@ func ErrorStorage() map[int]string {
 }
 
 type Error struct {
-	HTTPStatus  int            `json:"http_status"`
-	HTTPMessage string         `json:"http_message"`
+	httpStatus  int
+	httpMessage string
 	Code        int            `json:"code"`
 	Message     string         `json:"message"`
 	Details     map[string]any `json:"details"`
@@ -81,10 +81,10 @@ func (e *Error) GetCode() int {
 }
 
 func (e *Error) GetHTTPStatus() int {
-	return e.HTTPStatus
+	return e.httpStatus
 }
 func (e *Error) GetHTTPMessage() string {
-	return e.HTTPMessage
+	return e.httpMessage
 }
 
 func (e *Error) SetCode(code int) {
@@ -92,8 +92,8 @@ func (e *Error) SetCode(code int) {
 }
 
 func (e *Error) SetHTTPStatus(code int) {
-	e.HTTPStatus = code
-	e.HTTPMessage = http.StatusText(code)
+	e.httpStatus = code
+	e.httpMessage = http.StatusText(code)
 }
 
 func (e *Error) SetMessage(msg string, format ...any) {
@@ -152,8 +152,8 @@ func Err(miniErr *MiniError) ErrorOption {
 
 func New(code int, options ...ErrorOption) ErrorHandler {
 	err := &Error{
-		HTTPStatus:  http.StatusBadRequest,
-		HTTPMessage: http.StatusText(http.StatusBadRequest),
+		httpStatus:  http.StatusBadRequest,
+		httpMessage: http.StatusText(http.StatusBadRequest),
 		Code:        code,
 		Errors:      []*MiniError{},
 	}
