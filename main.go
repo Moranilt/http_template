@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Moranilt/http-utils/logger"
 	"github.com/Moranilt/http_template/clients/credentials"
 	"github.com/Moranilt/http_template/clients/database"
 	"github.com/Moranilt/http_template/clients/rabbitmq"
@@ -17,7 +18,6 @@ import (
 	"github.com/Moranilt/http_template/clients/vault"
 	"github.com/Moranilt/http_template/config"
 	"github.com/Moranilt/http_template/endpoints"
-	"github.com/Moranilt/http_template/logger"
 	"github.com/Moranilt/http_template/middleware"
 	"github.com/Moranilt/http_template/repository"
 	"github.com/Moranilt/http_template/service"
@@ -36,7 +36,7 @@ const (
 )
 
 func main() {
-	log := logger.NewSlog(os.Stdout)
+	log := logger.New(os.Stdout, logger.TYPE_JSON)
 	logger.SetDefault(log)
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -155,7 +155,7 @@ func ConsumeMessage(ctx context.Context, d rabbitmq.RabbitDelivery) error {
 	return nil
 }
 
-func RunMigrations(log *logger.SLogger, db *sql.DB, databaseName string) error {
+func RunMigrations(log logger.Logger, db *sql.DB, databaseName string) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return err

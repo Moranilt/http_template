@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/Moranilt/http-utils/logger"
 	"github.com/Moranilt/http_template/clients/database"
 	database_mock "github.com/Moranilt/http_template/clients/database/mock"
 	rabbitmq_mock "github.com/Moranilt/http_template/clients/rabbitmq/mock"
 	redis_mock "github.com/Moranilt/http_template/clients/redis/mock"
-	"github.com/Moranilt/http_template/logger"
 	"github.com/Moranilt/http_template/models"
 	"github.com/go-redis/redismock/v9"
 )
@@ -29,7 +29,7 @@ func mockRepository(t *testing.T) *mockedRepository {
 	mockDb, sqlMock := database_mock.NewSQlMock(t)
 	mockRabbitMQ := rabbitmq_mock.NewRabbitMQ(t)
 	mockRedis, redisMock := redis_mock.New()
-	mockLogger := logger.NewSlog(io.Discard)
+	mockLogger := logger.New(io.Discard, logger.TYPE_JSON)
 
 	repo := New(&database.Client{mockDb}, mockRabbitMQ, mockRedis, mockLogger)
 

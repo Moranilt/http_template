@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Moranilt/http_template/utils/response"
+	"github.com/Moranilt/http-utils/response"
 )
 
 type HealthItem struct {

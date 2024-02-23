@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Moranilt/http-utils/logger"
 	"github.com/Moranilt/http_template/clients/credentials"
-	"github.com/Moranilt/http_template/logger"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -39,7 +39,7 @@ type RabbitMQClient interface {
 }
 
 type Client struct {
-	logger          *logger.SLogger
+	logger          logger.Logger
 	queueName       string
 	connection      *amqp.Connection
 	channel         *amqp.Channel
@@ -77,7 +77,7 @@ func (c *Client) Check(ctx context.Context) error {
 	return nil
 }
 
-func Init(ctx context.Context, queueName string, log *logger.SLogger, creds credentials.SourceStringer) RabbitMQClient {
+func Init(ctx context.Context, queueName string, log logger.Logger, creds credentials.SourceStringer) RabbitMQClient {
 	client := Client{
 		logger:    log,
 		queueName: queueName,

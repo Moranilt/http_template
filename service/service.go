@@ -3,9 +3,9 @@ package service
 import (
 	"net/http"
 
-	"github.com/Moranilt/http_template/logger"
+	"github.com/Moranilt/http-utils/handler"
+	"github.com/Moranilt/http-utils/logger"
 	"github.com/Moranilt/http_template/repository"
-	"github.com/Moranilt/http_template/utils/handler"
 )
 
 type Service interface {
@@ -14,11 +14,11 @@ type Service interface {
 }
 
 type service struct {
-	log  *logger.SLogger
+	log  logger.Logger
 	repo *repository.Repository
 }
 
-func New(log *logger.SLogger, repo *repository.Repository) Service {
+func New(log logger.Logger, repo *repository.Repository) Service {
 	return &service{
 		log:  log,
 		repo: repo,
@@ -27,7 +27,7 @@ func New(log *logger.SLogger, repo *repository.Repository) Service {
 
 func (s *service) CreateUser(w http.ResponseWriter, r *http.Request) {
 	handler.New(w, r, s.log, s.repo.CreateUser).
-		WithJson().
+		WithJSON().
 		Run(http.StatusOK)
 }
 

@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/Moranilt/http-utils/logger"
+	"github.com/Moranilt/http-utils/tiny_errors"
 	"github.com/Moranilt/http_template/clients/database"
 	"github.com/Moranilt/http_template/clients/rabbitmq"
 	"github.com/Moranilt/http_template/clients/redis"
-	"github.com/Moranilt/http_template/logger"
 	"github.com/Moranilt/http_template/models"
-	"github.com/Moranilt/http_template/utils/tiny_errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -30,10 +30,10 @@ type Repository struct {
 	db       *database.Client
 	rabbitmq rabbitmq.RabbitMQClient
 	redis    *redis.Client
-	log      *logger.SLogger
+	log      logger.Logger
 }
 
-func New(db *database.Client, rabbitmq rabbitmq.RabbitMQClient, redis *redis.Client, logger *logger.SLogger) *Repository {
+func New(db *database.Client, rabbitmq rabbitmq.RabbitMQClient, redis *redis.Client, logger logger.Logger) *Repository {
 	return &Repository{
 		db:       db,
 		rabbitmq: rabbitmq,
