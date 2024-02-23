@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Moranilt/http-utils/mock"
 	"github.com/Moranilt/http_template/clients/rabbitmq"
-	"github.com/Moranilt/http_template/utils/mock"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

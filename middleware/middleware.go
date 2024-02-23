@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Moranilt/http_template/logger"
-	"github.com/Moranilt/http_template/utils/response"
+	"github.com/Moranilt/http-utils/logger"
+	"github.com/Moranilt/http-utils/response"
 	"github.com/google/uuid"
 )
 
@@ -17,12 +17,12 @@ const (
 )
 
 type Middleware struct {
-	logger *logger.SLogger
+	logger logger.Logger
 }
 
 type EndpointMiddlewareFunc func(handleFunc http.HandlerFunc) http.HandlerFunc
 
-func New(l *logger.SLogger) *Middleware {
+func New(l logger.Logger) *Middleware {
 	return &Middleware{
 		logger: l,
 	}

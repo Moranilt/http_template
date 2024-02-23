@@ -3,7 +3,7 @@ package models
 import (
 	"mime/multipart"
 
-	"github.com/Moranilt/http_template/utils/tiny_errors"
+	"github.com/Moranilt/http-utils/tiny_errors"
 )
 
 type TestRequest struct {
