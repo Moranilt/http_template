@@ -2,8 +2,8 @@ github.com/DATA-DOG/go-sqlmock v1.5.2 h1:OcvFkGmslmlZibjAjaHm3L//6LiuBgolP7Oputl
 github.com/DATA-DOG/go-sqlmock v1.5.2/go.mod h1:88MAG/4G7SMwSE3CeA0ZKzrT5CiOU3OJ+JlNzwDqpNU=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
-github.com/Moranilt/http-utils v1.1.2 h1:TSKB90puWyIF62t8Gnk2BAAM5giXt0wusohVVkfobPI=
-github.com/Moranilt/http-utils v1.1.2/go.mod h1:L1IXycVjjPxU4VpxCYEvz/zhJi15BKF+IaG10hR/6yI=
+github.com/Moranilt/http-utils v1.1.3 h1:89od9ujG02X2EGCpoyF6hUg/3KHFPNnCIc94ff49/JE=
+github.com/Moranilt/http-utils v1.1.3/go.mod h1:tDO51rpSKgrCoO/ZCo8RJ0bhyntB+HD2P2XRvNapqUw=
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=

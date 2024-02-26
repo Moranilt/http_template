@@ -3,9 +3,9 @@ package endpoints
 import (
 	"net/http"
 
-	"github.com/Moranilt/http_template/clients/database"
-	"github.com/Moranilt/http_template/clients/rabbitmq"
-	"github.com/Moranilt/http_template/clients/redis"
+	"github.com/Moranilt/http-utils/clients/database"
+	"github.com/Moranilt/http-utils/clients/rabbitmq"
+	"github.com/Moranilt/http-utils/clients/redis"
 	"github.com/Moranilt/http_template/healthcheck"
 	"github.com/Moranilt/http_template/middleware"
 	"github.com/Moranilt/http_template/service"

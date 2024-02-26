@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/Moranilt/http-utils/clients/database"
+	database_mock "github.com/Moranilt/http-utils/clients/database/mock"
+	rabbitmq_mock "github.com/Moranilt/http-utils/clients/rabbitmq/mock"
+	redis_mock "github.com/Moranilt/http-utils/clients/redis/mock"
 	"github.com/Moranilt/http-utils/logger"
-	"github.com/Moranilt/http_template/clients/database"
-	database_mock "github.com/Moranilt/http_template/clients/database/mock"
-	rabbitmq_mock "github.com/Moranilt/http_template/clients/rabbitmq/mock"
-	redis_mock "github.com/Moranilt/http_template/clients/redis/mock"
 	"github.com/Moranilt/http_template/models"
 	"github.com/go-redis/redismock/v9"
 )
