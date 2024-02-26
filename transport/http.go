@@ -22,8 +22,8 @@ func New(addr string, endpoints []endpoints.Endpoint, mw *middleware.Middleware)
 		Addr:         addr,
 		ReadTimeout:  40 * time.Second,
 		WriteTimeout: 40 * time.Second,
+		Handler:      router,
 	}
-	server.Handler = router
 	return server
 }
 
