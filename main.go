@@ -10,12 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Moranilt/http-utils/clients/database"
+	"github.com/Moranilt/http-utils/clients/rabbitmq"
+	"github.com/Moranilt/http-utils/clients/redis"
+	"github.com/Moranilt/http-utils/clients/vault"
 	"github.com/Moranilt/http-utils/logger"
-	"github.com/Moranilt/http_template/clients/credentials"
-	"github.com/Moranilt/http_template/clients/database"
-	"github.com/Moranilt/http_template/clients/rabbitmq"
-	"github.com/Moranilt/http_template/clients/redis"
-	"github.com/Moranilt/http_template/clients/vault"
 	"github.com/Moranilt/http_template/config"
 	"github.com/Moranilt/http_template/endpoints"
 	"github.com/Moranilt/http_template/middleware"
@@ -63,7 +62,7 @@ func main() {
 	}
 
 	// Database
-	dbCreds, err := vault.GetCreds[credentials.DB](ctx, cfg.Vault.DbCredsPath)
+	dbCreds, err := vault.GetCreds[database.Credentials](ctx, cfg.Vault.DbCredsPath)
 	if err != nil {
 		log.Fatalf("get db creds from vault: %v", err)
 	}
@@ -92,7 +91,7 @@ func main() {
 	}
 
 	// RabbitMQ
-	rabbitMQCreds, err := vault.GetCreds[credentials.RabbitMQ](ctx, cfg.Vault.RabbitMQCreds)
+	rabbitMQCreds, err := vault.GetCreds[rabbitmq.Credentials](ctx, cfg.Vault.RabbitMQCreds)
 	if err != nil {
 		log.Fatalf("get rabbitmq creds from vault: %v", err)
 	}
@@ -101,7 +100,7 @@ func main() {
 	rabbitmq.ReadMsgs(ctx, 5, 5*time.Second, ConsumeMessage)
 
 	// Redis
-	redisCreds, err := vault.GetCreds[credentials.Redis](ctx, cfg.Vault.RedisCreds)
+	redisCreds, err := vault.GetCreds[redis.Credentials](ctx, cfg.Vault.RedisCreds)
 	if err != nil {
 		log.Fatalf("get redis creds from vault: %v", err)
 	}
