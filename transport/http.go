@@ -11,11 +11,11 @@ import (
 
 func New(addr string, endpoints []endpoints.Endpoint, mw *middleware.Middleware) *http.Server {
 	router := mux.NewRouter()
-	router.Use(mw.Default)
+	router.Use(mw.Default, mw.Otel)
 
 	for _, endpoint := range endpoints {
-		handlerFunc := applyMiddleware(endpoint.HandleFunc, endpoint.Middleware)
-		router.HandleFunc(endpoint.Pattern, handlerFunc).Methods(endpoint.Methods...)
+		handler := applyMiddleware(endpoint.HandleFunc, endpoint.Middleware)
+		router.Handle(endpoint.Pattern, handler).Methods(endpoint.Methods...)
 	}
 
 	server := &http.Server{
@@ -27,9 +27,9 @@ func New(addr string, endpoints []endpoints.Endpoint, mw *middleware.Middleware)
 	return server
 }
 
-func applyMiddleware(handlerFunc http.HandlerFunc, mws []middleware.EndpointMiddlewareFunc) http.HandlerFunc {
+func applyMiddleware(handler http.Handler, mws []middleware.EndpointMiddlewareFunc) http.Handler {
 	for _, mw := range mws {
-		handlerFunc = mw(handlerFunc)
+		handler = mw(handler)
 	}
-	return handlerFunc
+	return handler
 }
