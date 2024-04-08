@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/Moranilt/http-utils v1.1.12
+	github.com/Moranilt/http-utils v1.1.14
 	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/golang-migrate/migrate v3.5.4+incompatible
 	github.com/google/uuid v1.6.0
@@ -40,7 +40,7 @@ require (
 	github.com/hashicorp/go-secure-stdlib/strutil v0.1.2 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hashicorp/vault/api v1.12.0 // indirect
+	github.com/hashicorp/vault/api v1.12.2 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
