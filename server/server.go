@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -20,8 +19,6 @@ import (
 	"github.com/Moranilt/http_template/service"
 	"github.com/Moranilt/http_template/tracer"
 	"github.com/Moranilt/http_template/transport"
-	"github.com/golang-migrate/migrate"
-	"github.com/golang-migrate/migrate/database/postgres"
 	_ "github.com/golang-migrate/migrate/source/file"
 	"golang.org/x/sync/errgroup"
 )
@@ -57,7 +54,7 @@ func Run(ctx context.Context) {
 		log.Fatalf("get db creds from vault: %v", err)
 	}
 
-	db, err := database.New(ctx, DB_DRIVER_NAME, dbCreds, cfg.Production)
+	db, err := database.New(ctx, DB_DRIVER_NAME, dbCreds)
 	if err != nil {
 		log.Fatalf("db connection: %v", err)
 	}
@@ -67,12 +64,6 @@ func Run(ctx context.Context) {
 	tp, err := tracer.NewProvider(cfg.Tracer.URL, cfg.Tracer.Name)
 	if err != nil {
 		log.Fatalf("tracer: %v", err)
-	}
-
-	// Migrations
-	err = RunMigrations(log, db.DB.DB, dbCreds.DBName)
-	if err != nil {
-		log.Fatalf("migration: %v", err)
 	}
 
 	// RabbitMQ
@@ -127,30 +118,6 @@ func Run(ctx context.Context) {
 	if err := g.Wait(); err != nil {
 		log.Infof("exit with: %s", err)
 	}
-}
-
-func RunMigrations(log logger.Logger, db *sql.DB, databaseName string) error {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		return err
-	}
-
-	m, err := migrate.NewWithDatabaseInstance("file://migrations", databaseName, driver)
-	if err != nil {
-		return err
-	}
-	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
-		return err
-	}
-
-	version, _, err := m.Version()
-	if err != nil {
-		return err
-	}
-
-	log.Debug(fmt.Sprintf("migration: version %d", version))
-	return nil
 }
 
 // Example of consume

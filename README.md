@@ -28,13 +28,24 @@ gonew github.com/Moranilt/http_template example.com/project_name
 
 ## Makefile
 To fast usage you can use makefile commands
-`run` - runs you app with local environment variables
-`run-race` - runs you app with local environment variables with `-race` flag
-`test` - runs tests in all folders
-`test-cover` - runs tests with coverage
-`cover-html` - opens your `cover` file in browser
-`docker-up` - runs docker compose file
-`docker-down` - runs docker compose down command
+- `run` - runs you app with local environment variables
+- `run-race` - runs you app with local environment variables with `-race` flag
+- `test` - runs tests in all folders
+- `test-cover` - runs tests with coverage
+- `cover-html` - opens your `cover` file in browser
+- `docker-up` - runs docker compose file
+- `docker-down` - runs docker compose down command
+- `migrate` - runs migration to the latest version or specific version using `-version` flag
+- `migrate up` - runs migration to the next step from current
+- `migrate down` - runs migration to previous step from current
+
+`migrate` commands accept:
+- version - version that you need to migrate to. You can pass `latest` to migrate to the latest version.
+- dbname - database name
+- host - database host
+- user - username for database
+- pass - users password for database
+- sslmode - sslmode for database, not required. By default it disabled. You can watch all defaults in Makefile.
 
 Feel free to modify environment variables, but beware to not break default configuration rules.
 
@@ -67,8 +78,6 @@ Logic to make Healthcheck handle function for route.
 ### Logger
 Contains logger using [logrus](https://github.com/sirupsen/logrus). Added function `WithRequestInfo` to add **requestId** from context to logs. Feel free to modify.
 
-After [release go 1.21.0](https://tip.golang.org/doc/go1.21#slog) will be replaced with `slog` package.
-
 ### Middleware
 Contains all middlewares for your application. It has default middleware to add `X-Request-ID` header and log every incoming request. Feel free to modify.
 
@@ -88,13 +97,11 @@ HTTP wrapper for repository. It contains unique logic with [handler](https://pkg
 Default tracer implementation. Feel free to modify.
 
 ### Transport
-Default settings to create http-transport using [gorilla mux](https://github.com/gorilla/mux). Feel free to modify or add more trasports.
+Default settings to create http-transport using [gorilla mux](https://github.com/gorilla/mux). Feel free to modify or add more transports.
 
 ### Utils
 Helper functions to make your life easier.
 
 ## TODO
-- stream response  
-- refactor `logger` when go 1.21 will be in production  
-- add `tools` folder with migration script  
+- stream response
 - add README template into `docs` folder
