@@ -39,3 +39,22 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+
+migrate_version = latest
+host = localhost
+user = root
+pass = 123456
+dbname = test
+sslmode = disable
+
+
+migrate: ./cmd
+	@if [ "$(filter up down,$(MAKECMDGOALS))" = "" ]; then \
+		go run ./cmd run -dbname=$(dbname) -pass=$(pass) -user=$(user) -host=$(host) -version=$(migrate_version) -sslmode=$(sslmode); \
+	else \
+		go run ./cmd $(filter up down,$(MAKECMDGOALS)) -dbname=$(dbname) -pass=$(pass) -user=$(user) -host=$(host) -version=$(migrate_version) -sslmode=$(sslmode); \
+	fi
+		
+up down:
+	@:
