@@ -6,10 +6,11 @@ import (
 	"errors"
 	"mime/multipart"
 	"net/textproto"
-	"reflect"
 	"testing"
 
+	"github.com/Moranilt/http_template/custom_errors"
 	"github.com/Moranilt/http_template/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFiles(t *testing.T) {
@@ -48,29 +49,15 @@ func TestFiles(t *testing.T) {
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
-
-		if response.Name != "Test" {
-			t.Errorf("Expected name to be 'Test', got %q", response.Name)
-		}
-
-		if !reflect.DeepEqual(response.Files, mockedFiles) {
-			t.Errorf("Expected files to be %v, got %v", mockedFiles, response.Files)
-		}
-
-		if !reflect.DeepEqual(response.OneMoreFile, mockedFile) {
-			t.Errorf("Expected oneMoreFile to be %v, got %v", mockedFile, response.OneMoreFile)
-		}
+		assert.Equal(t, "Test", response.Name)
+		assert.Equal(t, mockedFiles, response.Files)
+		assert.Equal(t, mockedFile, response.OneMoreFile)
 	})
 
 	t.Run("empty request", func(t *testing.T) {
 		response, err := mockedRepo.repo.Files(context.Background(), nil)
-		if err.Error() != models.ERR_BodyRequired {
-			t.Errorf("Expected error %q but got %q", models.ERR_BodyRequired, err)
-		}
-
-		if response != nil {
-			t.Errorf("Expected nil response on error, got %v", response)
-		}
+		assert.Equal(t, custom_errors.ERR_CODE_BodyRequired, err.GetCode())
+		assert.Nil(t, response)
 	})
 
 	t.Run("rabbitmq error", func(t *testing.T) {
@@ -79,12 +66,7 @@ func TestFiles(t *testing.T) {
 		mockedRepo.rabbitmqMock.ExpectPush(b, expectedError)
 
 		response, err := mockedRepo.repo.Files(context.Background(), mockedRequest)
-		if err.Error() != expectedError.Error() {
-			t.Errorf("Expected error %q but got %q", models.ERR_BodyRequired, err)
-		}
-
-		if response != nil {
-			t.Errorf("Expected nil response on error, got %v", response)
-		}
+		assert.Equal(t, expectedError.Error(), err.Error())
+		assert.Nil(t, response)
 	})
 }

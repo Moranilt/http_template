@@ -9,6 +9,7 @@ import (
 	"github.com/Moranilt/http_template/healthcheck"
 	"github.com/Moranilt/http_template/middleware"
 	"github.com/Moranilt/http_template/service"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Endpoint struct {
@@ -30,6 +31,16 @@ func MakeEndpoints(service service.Service, mw *middleware.Middleware) []Endpoin
 			HandleFunc: service.Files,
 			Methods:    []string{http.MethodPost},
 			Middleware: []middleware.EndpointMiddlewareFunc{mw.AppTokenRequired},
+		},
+		{
+			Pattern:    "/random-number",
+			HandleFunc: service.GetRandomNumber,
+			Methods:    []string{http.MethodGet},
+		},
+		{
+			Pattern:    "/metrics",
+			HandleFunc: promhttp.Handler().ServeHTTP,
+			Methods:    []string{http.MethodGet},
 		},
 	}
 }

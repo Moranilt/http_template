@@ -10,9 +10,10 @@ import (
 	"github.com/Moranilt/http-utils/clients/database"
 	"github.com/Moranilt/http-utils/clients/rabbitmq"
 	"github.com/Moranilt/http-utils/clients/redis"
-	"github.com/Moranilt/http-utils/clients/vault"
 	"github.com/Moranilt/http-utils/logger"
+	"github.com/Moranilt/http-utils/tiny_errors"
 	"github.com/Moranilt/http_template/config"
+	"github.com/Moranilt/http_template/custom_errors"
 	"github.com/Moranilt/http_template/endpoints"
 	"github.com/Moranilt/http_template/middleware"
 	"github.com/Moranilt/http_template/repository"
@@ -30,6 +31,7 @@ const (
 )
 
 func Run(ctx context.Context) {
+	tiny_errors.Init(custom_errors.ERRORS)
 	log := logger.New(os.Stdout, logger.TYPE_JSON)
 	logger.SetDefault(log)
 
@@ -38,23 +40,7 @@ func Run(ctx context.Context) {
 		log.Fatalf("config: %v", err)
 	}
 
-	// Vault
-	err = vault.Init(&vault.Config{
-		MountPath: cfg.Vault.MountPath,
-		Token:     cfg.Vault.Token,
-		Host:      cfg.Vault.Host,
-	})
-	if err != nil {
-		log.Fatalf("vault: %v", err)
-	}
-
-	// Database
-	dbCreds, err := vault.GetCreds[database.Credentials](ctx, cfg.Vault.DbCredsPath)
-	if err != nil {
-		log.Fatalf("get db creds from vault: %v", err)
-	}
-
-	db, err := database.New(ctx, DB_DRIVER_NAME, dbCreds)
+	db, err := database.New(ctx, DB_DRIVER_NAME, cfg.DB)
 	if err != nil {
 		log.Fatalf("db connection: %v", err)
 	}
@@ -66,22 +52,10 @@ func Run(ctx context.Context) {
 		log.Fatalf("tracer: %v", err)
 	}
 
-	// RabbitMQ
-	rabbitMQCreds, err := vault.GetCreds[rabbitmq.Credentials](ctx, cfg.Vault.RabbitMQCreds)
-	if err != nil {
-		log.Fatalf("get rabbitmq creds from vault: %v", err)
-	}
-
-	rabbitmqClient := rabbitmq.Init(ctx, RABBITMQ_QUEUE_NAME, log, rabbitMQCreds)
+	rabbitmqClient := rabbitmq.Init(ctx, RABBITMQ_QUEUE_NAME, log, cfg.RabbitMQ)
 	rabbitmq.ReadMsgs(ctx, 5, 5*time.Second, ConsumeMessage)
 
-	// Redis
-	redisCreds, err := vault.GetCreds[redis.Credentials](ctx, cfg.Vault.RedisCreds)
-	if err != nil {
-		log.Fatalf("get redis creds from vault: %v", err)
-	}
-
-	redisClient, err := redis.New(ctx, redisCreds)
+	redisClient, err := redis.New(ctx, cfg.Redis)
 	if err != nil {
 		log.Fatalf("redis: %v", err)
 	}

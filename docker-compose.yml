@@ -7,6 +7,7 @@ services:
         - POSTGRES_USER=root
         - POSTGRES_PASSWORD=123456
         - POSTGRES_DB=test
+
   jaeger:
     container_name: jaeger
     image: jaegertracing/all-in-one:latest
@@ -16,43 +17,6 @@ services:
       - "4318:4318"
       - "6831:6831/udp"
       - "14268:14268"
-
-  vault:
-    image: hashicorp/vault
-    ports:
-      - "8200:8200"
-    cap_add:
-      - IPC_LOCK
-    environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=myroot
-      - VAULT_TOKEN=myroot
-      - VAULT_API_ADDR=http://localhost:8200
-      - VAULT_ADDR=http://localhost:8200
-    networks:
-      - vault_init
-
-  vault_init:
-    image: hashicorp/vault
-    depends_on:
-      - vault
-    restart: on-failure
-    environment:
-      - VAULT_TOKEN=myroot
-      - VAULT_API_ADDR=http://vault:8200
-      - VAULT_ADDR=http://vault:8200
-    volumes:
-      - ./config/local/vault/policy/test_policy.hcl:/policies/test_policy.hcl:ro
-      - ./config/local/vault/db_config.json:/tmp/db_config.json:ro
-      - ./config/local/vault/rabbitmq_config.json:/tmp/rabbitmq_config.json:ro
-      - ./config/local/vault/redis_config.json:/tmp/redis_config.json:ro
-    command: >
-     sh -c "vault policy write test-policy /policies/test_policy.hcl &&
-      vault token create -policy=test-policy -id test-token &&
-      vault kv put -mount=secret test/db @/tmp/db_config.json &&
-      vault kv put -mount=secret test/redis @/tmp/redis_config.json &&
-      vault kv put -mount=secret test/rabbitmq @/tmp/rabbitmq_config.json"
-    networks:
-      - vault_init
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -71,6 +35,28 @@ services:
       - "6379:6379"
     environment:
       REDIS_PASSWORD: 1234
+
+  prometheus:
+    image: prom/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./config/local/prometheus:/etc/prometheus
+      
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 9091:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./config/local/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./config/local/grafana/dashboards:/etc/grafana/provisioning/dashboards
 
 networks:
   vault_init:

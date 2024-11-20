@@ -4,10 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/Moranilt/http-utils/logger"
 	"github.com/Moranilt/http-utils/response"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -19,7 +24,9 @@ const (
 )
 
 type Middleware struct {
-	logger logger.Logger
+	logger               logger.Logger
+	requestStatusCounter *prometheus.CounterVec
+	responseTime         *prometheus.HistogramVec
 }
 
 type EndpointMiddlewareFunc func(handleFunc http.Handler) http.Handler
@@ -27,6 +34,18 @@ type EndpointMiddlewareFunc func(handleFunc http.Handler) http.Handler
 func New(l logger.Logger) *Middleware {
 	return &Middleware{
 		logger: l,
+		requestStatusCounter: promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "your_app_http_response_total",
+			Help: "Total number of requests by endpoint and status",
+		},
+			[]string{"method", "endpoint", "status"},
+		),
+		responseTime: promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Name: "your_app_http_response_time_seconds",
+			Help: "Response time in seconds",
+		},
+			[]string{"method", "endpoint", "status"},
+		),
 	}
 }
 
@@ -60,6 +79,21 @@ func (m *Middleware) Otel(next http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 
 		span.SetAttributes(attribute.Int("http.status_code", rw.statusCode))
+	})
+}
+
+func (m *Middleware) Prometheus(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rw := &responseWriter{ResponseWriter: w}
+		r = r.WithContext(r.Context())
+		next.ServeHTTP(rw, r)
+
+		duration := time.Since(start).Seconds()
+		path, _ := mux.CurrentRoute(r).GetPathTemplate()
+		status := strconv.Itoa(rw.statusCode)
+		m.requestStatusCounter.WithLabelValues(r.Method, path, status).Inc()
+		m.responseTime.WithLabelValues(r.Method, path, status).Observe(duration)
 	})
 }
 

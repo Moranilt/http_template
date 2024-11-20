@@ -2,8 +2,6 @@ package models
 
 import (
 	"mime/multipart"
-
-	"github.com/Moranilt/http-utils/tiny_errors"
 )
 
 type TestRequest struct {
@@ -28,19 +26,11 @@ type FileResponse struct {
 	OneMoreFile *multipart.FileHeader   `mapstructure:"one_more_file" json:"one_more_file"`
 }
 
-const (
-	_ = iota
-	ERR_CODE_Database
-	ERR_CODE_Marshal
-	ERR_CODE_Redis
-	ERR_CODE_RabbitMQ
-	ERR_CODE_BodyRequired
-)
+type GetRandomNumberRequest struct {
+	Min int `mapstructure:"min"`
+	Max int `mapstructure:"max"`
+}
 
-const (
-	ERR_BodyRequired = "required body is missing"
-)
-
-var (
-	ERR_BodyRequiredTiny = tiny_errors.New(ERR_CODE_BodyRequired, tiny_errors.Message(ERR_BodyRequired))
-)
+type GetRandomNumberResponse struct {
+	Number int `json:"number"`
+}
