@@ -11,7 +11,7 @@ import (
 
 func New(addr string, endpoints []endpoints.Endpoint, mw *middleware.Middleware) *http.Server {
 	router := mux.NewRouter()
-	router.Use(mw.Default, mw.Otel)
+	router.Use(mw.Default, mw.Otel, mw.Prometheus)
 
 	for _, endpoint := range endpoints {
 		handler := applyMiddleware(endpoint.HandleFunc, endpoint.Middleware)

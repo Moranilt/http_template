@@ -2,9 +2,11 @@ package config
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 
+	"github.com/Moranilt/http-utils/clients/database"
+	"github.com/Moranilt/http-utils/clients/rabbitmq"
+	"github.com/Moranilt/http-utils/clients/redis"
 	"github.com/spf13/viper"
 )
 
@@ -12,12 +14,18 @@ const (
 	ENV_PRODUCTION = "PRODUCTION"
 	ENV_PORT       = "PORT"
 
-	ENV_VAULT_TOKEN               = "VAULT_TOKEN"
-	ENV_VAULT_HOST                = "VAULT_HOST"
-	ENV_VAULT_MOUNT_PATH          = "VAULT_MOUNT_PATH"
-	ENV_VAULT_DB_CREDS_PATH       = "VAULT_DB_CREDS_PATH"
-	ENV_VAULT_RABBITMQ_CREDS_PATH = "VAULT_RABBITMQ_CREDS_PATH"
-	ENV_VAULT_REDIS_CREDS_PATH    = "VAULT_REDIS_CREDS_PATH"
+	ENV_DB_NAME     = "DB_NAME"
+	ENV_DB_HOST     = "DB_HOST"
+	ENV_DB_USER     = "DB_USER"
+	ENV_DB_PASSWORD = "DB_PASSWORD"
+	ENV_DB_SSL_MODE = "DB_SSL_MODE"
+
+	ENV_RABBITMQ_HOST     = "RABBITMQ_HOST"
+	ENV_RABBITMQ_USERNAME = "RABBITMQ_USERNAME"
+	ENV_RABBITMQ_PASSWORD = "RABBITMQ_PASSWORD"
+
+	ENV_REDIS_HOST     = "REDIS_HOST"
+	ENV_REDIS_PASSWORD = "REDIS_PASSWORD"
 
 	ENV_TRACER_URL  = "TRACER_URL"
 	ENV_TRACER_NAME = "TRACER_NAME"
@@ -25,23 +33,17 @@ const (
 
 var envVariables []string = []string{
 	ENV_PORT,
-	ENV_VAULT_TOKEN,
-	ENV_VAULT_HOST,
-	ENV_VAULT_MOUNT_PATH,
-	ENV_VAULT_DB_CREDS_PATH,
-	ENV_VAULT_RABBITMQ_CREDS_PATH,
-	ENV_VAULT_REDIS_CREDS_PATH,
+	ENV_DB_NAME,
+	ENV_DB_HOST,
+	ENV_DB_USER,
+	ENV_DB_PASSWORD,
+	ENV_DB_SSL_MODE,
+	ENV_RABBITMQ_HOST,
+	ENV_RABBITMQ_USERNAME,
+	ENV_RABBITMQ_PASSWORD,
+	ENV_REDIS_HOST,
 	ENV_TRACER_URL,
 	ENV_TRACER_NAME,
-}
-
-type VaultEnv struct {
-	MountPath     string `mapstructure:"VAULT_MOUNT_PATH"`
-	DbCredsPath   string `mapstructure:"VAULT_DB_CREDS_PATH"`
-	RabbitMQCreds string `mapstructure:"VAULT_RABBITMQ_CREDS_PATH"`
-	RedisCreds    string `mapstructure:"VAULT_REDIS_CREDS_PATH"`
-	Token         string `mapstructure:"VAULT_TOKEN"`
-	Host          string `mapstructure:"VAULT_HOST"`
 }
 
 type TracerConfig struct {
@@ -50,7 +52,9 @@ type TracerConfig struct {
 }
 
 type Config struct {
-	Vault      *VaultEnv
+	DB         *database.Credentials
+	RabbitMQ   *rabbitmq.Credentials
+	Redis      *redis.Credentials
 	Tracer     *TracerConfig
 	Port       string
 	Production bool
@@ -70,20 +74,33 @@ func Read() (*Config, error) {
 		result[name] = value
 	}
 
-	vaultHostUrl, err := url.Parse(result[ENV_VAULT_HOST])
-	if err != nil {
-		return nil, fmt.Errorf("%q has invalid value: %w", ENV_VAULT_HOST, err)
+	dbCreds := &database.Credentials{
+		Username: result[ENV_DB_USER],
+		Password: result[ENV_DB_PASSWORD],
+		DBName:   result[ENV_DB_NAME],
+		Host:     result[ENV_DB_HOST],
+	}
+
+	if result[ENV_DB_SSL_MODE] != "" {
+		sslMode := result[ENV_DB_SSL_MODE]
+		dbCreds.SSLMode = &sslMode
+	}
+
+	rabbitMQCreds := &rabbitmq.Credentials{
+		Host:     result[ENV_RABBITMQ_HOST],
+		Username: result[ENV_RABBITMQ_USERNAME],
+		Password: result[ENV_RABBITMQ_PASSWORD],
+	}
+
+	redisCreds := &redis.Credentials{
+		Host:     result[ENV_REDIS_HOST],
+		Password: result[ENV_REDIS_PASSWORD],
 	}
 
 	envCfg = Config{
-		Vault: &VaultEnv{
-			Token:         result[ENV_VAULT_TOKEN],
-			MountPath:     result[ENV_VAULT_MOUNT_PATH],
-			DbCredsPath:   result[ENV_VAULT_DB_CREDS_PATH],
-			Host:          vaultHostUrl.String(),
-			RabbitMQCreds: result[ENV_VAULT_RABBITMQ_CREDS_PATH],
-			RedisCreds:    result[ENV_VAULT_REDIS_CREDS_PATH],
-		},
+		DB:       dbCreds,
+		RabbitMQ: rabbitMQCreds,
+		Redis:    redisCreds,
 		Tracer: &TracerConfig{
 			URL:  result[ENV_TRACER_URL],
 			Name: result[ENV_TRACER_NAME],

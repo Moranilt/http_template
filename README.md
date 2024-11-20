@@ -49,7 +49,15 @@ To fast usage you can use makefile commands
 
 Feel free to modify environment variables, but beware to not break default configuration rules.
 
+## Metrics
+There are default metrics for endpoint, method and status code.
+
+By default you will have `You App Dashboard` in grafana. Just run `make docker-up`, navigate to **http://localhost:9091/** and login with `admin` and password - `grafana`.
+
 ## Folders
+### CMD
+This folder contains all commands for your application which you nee to run using CMD. For example - migrations.
+
 ### Clients
 This folder contains all clients for external services. Implement `healthcheck.Checker` interface if you want to use your service in `/health` endpoint.
 
@@ -66,6 +74,9 @@ Contains logic to read ENV-variables, validate and store it to default applicati
 2. Add this constant to array
 3. Modify default `Config` structure
 4. Using your new constant as key, read from `result` map and store you variable to `Config` structure
+
+### Custom errors
+Contains all custom errors for your application. Feel free to modify. Using tiny_errors package to make your errors more readable.
 
 ### Endpoints
 Store all endpoints into `MakeEndpoints` function.

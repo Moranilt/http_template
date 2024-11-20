@@ -10,10 +10,14 @@ import (
 	"github.com/Moranilt/http-utils/clients/redis"
 	"github.com/Moranilt/http-utils/logger"
 	"github.com/Moranilt/http-utils/tiny_errors"
+	"github.com/Moranilt/http_template/custom_errors"
 	"github.com/Moranilt/http_template/models"
+	"github.com/Moranilt/http_template/utils"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/rand"
 )
 
 const (
@@ -42,6 +46,28 @@ func New(db *database.Client, rabbitmq rabbitmq.RabbitMQClient, redis *redis.Cli
 	}
 }
 
+func (repo *Repository) GetRandomNumber(ctx context.Context, req *models.GetRandomNumberRequest) (*models.GetRandomNumberResponse, tiny_errors.ErrorHandler) {
+	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
+	_, span := otel.Tracer(TracerName).Start(ctx, "GetRandomNumber", trace.WithAttributes())
+	defer span.End()
+
+	errFields := utils.ValidateRequiredFields(
+		utils.NewRequiredField("Min", req.Min),
+		utils.NewRequiredField("Max", req.Max),
+	)
+	if errFields != nil {
+		err := tiny_errors.New(custom_errors.ERR_CODE_REQUIRED_FIELD, errFields...)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "ValidateRequiredFields")
+		return nil, err
+	}
+
+	randomNumber := rand.Intn(req.Max-req.Min) + req.Min
+	return &models.GetRandomNumberResponse{
+		Number: randomNumber,
+	}, nil
+}
+
 func (repo *Repository) CreateUser(ctx context.Context, req *models.TestRequest) (*models.TestResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	newCtx, span := otel.Tracer(TracerName).Start(ctx, "Test", trace.WithAttributes(
@@ -53,28 +79,28 @@ func (repo *Repository) CreateUser(ctx context.Context, req *models.TestRequest)
 
 	row := repo.db.QueryRowxContext(newCtx, QUERY_InsertUser, req.Firstname, req.Lastname, *req.Patronymic)
 	if row.Err() != nil {
-		return nil, tiny_errors.New(models.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
 	}
 
 	var lastInsertId string
 	err := row.Scan(&lastInsertId)
 	if err != nil {
-		return nil, tiny_errors.New(models.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Database, tiny_errors.Message(row.Err().Error()))
 	}
 
 	b, err := json.Marshal(req)
 	if err != nil {
-		return nil, tiny_errors.New(models.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
 	}
 
 	err = repo.redis.Set(newCtx, lastInsertId, b, REDIS_TTL).Err()
 	if err != nil {
-		return nil, tiny_errors.New(models.ERR_CODE_Redis, tiny_errors.Message(err.Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Redis, tiny_errors.Message(err.Error()))
 	}
 
 	err = repo.rabbitmq.Push(newCtx, b)
 	if err != nil {
-		return nil, tiny_errors.New(models.ERR_CODE_RabbitMQ, tiny_errors.Message(err.Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_RabbitMQ, tiny_errors.Message(err.Error()))
 	}
 
 	return &models.TestResponse{
@@ -85,7 +111,7 @@ func (repo *Repository) CreateUser(ctx context.Context, req *models.TestRequest)
 func (repo *Repository) Files(ctx context.Context, req *models.FileRequest) (*models.FileResponse, tiny_errors.ErrorHandler) {
 	repo.log.WithRequestId(ctx).InfoContext(ctx, TracerName, "data", req)
 	if req == nil {
-		return nil, models.ERR_BodyRequiredTiny
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_BodyRequired)
 	}
 	var fileNames []string
 	for _, f := range req.Files {
@@ -100,13 +126,13 @@ func (repo *Repository) Files(ctx context.Context, req *models.FileRequest) (*mo
 
 	b, err := json.Marshal(req)
 	if err != nil {
-		return nil, tiny_errors.New(models.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
+		return nil, tiny_errors.New(custom_errors.ERR_CODE_Marshal, tiny_errors.Message(err.Error()))
 	}
 
 	err = repo.rabbitmq.Push(newCtx, b)
 	if err != nil {
 		return nil, tiny_errors.New(
-			models.ERR_CODE_RabbitMQ,
+			custom_errors.ERR_CODE_RabbitMQ,
 			tiny_errors.Message(err.Error()),
 			tiny_errors.Detail("event", "Push"),
 		)
