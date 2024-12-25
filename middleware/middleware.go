@@ -15,6 +15,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type ContextKey string
@@ -64,18 +66,39 @@ func (m *Middleware) Default(next http.Handler) http.Handler {
 func (m *Middleware) Otel(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		newCtx, span := otel.Tracer("http").Start(ctx, r.URL.Path)
+
+		// extract trace id from header
+		newTraceID := r.Header.Get("X-Trace-ID")
+
+		if newTraceID != "" {
+			traceID, err := trace.TraceIDFromHex(newTraceID)
+			if err == nil {
+				spanContext := trace.NewSpanContext(trace.SpanContextConfig{
+					TraceID: trace.TraceID(traceID),
+				})
+				// create new span context with trace id from header
+				ctx = trace.ContextWithSpanContext(r.Context(), spanContext)
+			}
+		}
+
+		path, _ := mux.CurrentRoute(r).GetPathTemplate()
+		ctx, span := otel.Tracer("http").Start(ctx, path)
 		defer span.End()
 
 		span.SetAttributes(
 			attribute.String("http.method", r.Method),
-			attribute.String("http.route", r.URL.Path),
+			attribute.String("http.route", path),
 			attribute.String("span.kind", "server"),
 			attribute.String("request_id", GetRequestID(r.Context())),
 		)
 
 		rw := &responseWriter{ResponseWriter: w}
-		r = r.WithContext(newCtx)
+		r = r.WithContext(ctx)
+
+		traceID := span.SpanContext().TraceID().String()
+		w.Header().Add("X-Trace-ID", traceID)
+		otel.GetTextMapPropagator().Inject(r.Context(), propagation.HeaderCarrier(w.Header()))
+
 		next.ServeHTTP(rw, r)
 
 		span.SetAttributes(attribute.Int("http.status_code", rw.statusCode))
