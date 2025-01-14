@@ -16,7 +16,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type ContextKey string
@@ -29,6 +28,7 @@ type Middleware struct {
 	logger               logger.Logger
 	requestStatusCounter *prometheus.CounterVec
 	responseTime         *prometheus.HistogramVec
+	otelProp             propagation.TextMapPropagator
 }
 
 type EndpointMiddlewareFunc func(handleFunc http.Handler) http.Handler
@@ -48,6 +48,7 @@ func New(l logger.Logger) *Middleware {
 		},
 			[]string{"method", "endpoint", "status"},
 		),
+		otelProp: otel.GetTextMapPropagator(),
 	}
 }
 
@@ -67,38 +68,25 @@ func (m *Middleware) Otel(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// extract trace id from header
-		newTraceID := r.Header.Get("X-Trace-ID")
-
-		if newTraceID != "" {
-			traceID, err := trace.TraceIDFromHex(newTraceID)
-			if err == nil {
-				spanContext := trace.NewSpanContext(trace.SpanContextConfig{
-					TraceID: trace.TraceID(traceID),
-				})
-				// create new span context with trace id from header
-				ctx = trace.ContextWithSpanContext(r.Context(), spanContext)
-			}
-		}
+		// extract trace id from request
+		ctx = m.otelProp.Extract(ctx, propagation.HeaderCarrier(r.Header))
 
 		path, _ := mux.CurrentRoute(r).GetPathTemplate()
 		ctx, span := otel.Tracer("http").Start(ctx, path)
 		defer span.End()
 
+		// set traceparent
+		m.otelProp.Inject(ctx, propagation.HeaderCarrier(w.Header()))
+
 		span.SetAttributes(
 			attribute.String("http.method", r.Method),
 			attribute.String("http.route", path),
 			attribute.String("span.kind", "server"),
-			attribute.String("request_id", GetRequestID(r.Context())),
+			attribute.String("request_id", GetRequestID(ctx)),
 		)
 
 		rw := &responseWriter{ResponseWriter: w}
 		r = r.WithContext(ctx)
-
-		traceID := span.SpanContext().TraceID().String()
-		w.Header().Add("X-Trace-ID", traceID)
-		otel.GetTextMapPropagator().Inject(r.Context(), propagation.HeaderCarrier(w.Header()))
-
 		next.ServeHTTP(rw, r)
 
 		span.SetAttributes(attribute.Int("http.status_code", rw.statusCode))
