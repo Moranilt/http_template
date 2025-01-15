@@ -4,8 +4,8 @@ github.com/DATA-DOG/go-sqlmock v1.5.2 h1:OcvFkGmslmlZibjAjaHm3L//6LiuBgolP7Oputl
 github.com/DATA-DOG/go-sqlmock v1.5.2/go.mod h1:88MAG/4G7SMwSE3CeA0ZKzrT5CiOU3OJ+JlNzwDqpNU=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
-github.com/Moranilt/http-utils v1.1.25 h1:OUmqNmj585cYlF38e88MokzfTcX8ZNEGKwK9vBjmUbI=
-github.com/Moranilt/http-utils v1.1.25/go.mod h1:/DNnMmwi2irQ11n28AGLiOr7F8MlNJVZUxdLsOE9Bq4=
+github.com/Moranilt/http-utils v1.1.26 h1:kub5c1ppPy35vnO1quVTxdW3ViEWoaEx6M751gV+Uew=
+github.com/Moranilt/http-utils v1.1.26/go.mod h1:/DNnMmwi2irQ11n28AGLiOr7F8MlNJVZUxdLsOE9Bq4=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
